@@ -11,6 +11,10 @@ const getGroupName = async (groupId: string): Promise<string> =>
 const fetchCommunitiesOfUser = async (
   platformUserId: string
 ): Promise<CommunityResult[]> => {
+  logger.verbose(
+    `Called fetchCommunitiesOfUser, platformUserId=${platformUserId}`
+  );
+
   const res = await axios.get(
     `${config.backendUrl}/communities/${platformUserId}`
   );
@@ -26,6 +30,11 @@ const leaveCommunity = async (
   platformUserId: string,
   communityId: string
 ): Promise<void> => {
+  logger.verbose(
+    `Called leaveCommunity, platformUserId=${platformUserId}, communityId=${ 
+      communityId}`
+  );
+
   try {
     const res = await axios.post(
       `${config.backendUrl}/user/removeFromPlatform`,
@@ -50,6 +59,11 @@ const kickUser = async (
   platformUserId: string,
   reason: string
 ): Promise<void> => {
+  logger.verbose(
+    `Called kickUser, groupId=${groupId}, platformUserId=${platformUserId}, ` +
+      `reason=${reason}`
+  );
+
   try {
     await Bot.Client.kickChatMember(groupId, +platformUserId);
 

@@ -9,6 +9,10 @@ const isMember = async (
   groupId: string,
   platformUserId: number
 ): Promise<Boolean> => {
+  logger.verbose(
+    `Called isMember, groupId=${groupId}, platformUserId=${platformUserId}`
+  );
+
   try {
     const member = await Bot.Client.getChatMember(groupId, platformUserId);
     return member !== undefined && member.status === "member";
@@ -21,6 +25,11 @@ const generateInvite = async (
   platformUserId: string,
   groupId: string
 ): Promise<string | undefined> => {
+  logger.verbose(
+    `Called generateInvite, platformUserId=${platformUserId}, ` +
+      `groupId=${groupId}`
+  );
+
   try {
     const isTelegramUser = await isMember(groupId, +platformUserId);
     logger.verbose(`isMember result: ${isTelegramUser}`);
@@ -44,6 +53,10 @@ const manageGroups = async (
   params: ManageGroupsParam,
   isUpgrade: boolean
 ): Promise<boolean> => {
+  logger.verbose(
+    `Called manageGroups, params=${params}, isUpgrade=${isUpgrade}`
+  );
+
   const { platformUserId } = params;
 
   let result: boolean = true;
