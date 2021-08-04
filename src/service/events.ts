@@ -25,9 +25,8 @@ const onChatStart = async (ctx: any): Promise<void> => {
 
   if (message.chat.id > 0) {
     if (new RegExp(/^\/start [0-9]+_[0-9]+$/).test(message.text)) {
-      const refId = message.text.split("/start ")[1].split("_")[0];
+      const [refId, communityId] = message.text.split("/start ")[1].split("_");
       const platformUserId = message.from.id;
-      const communityId = message.text.split("_")[1];
 
       try {
         await ctx.reply(
