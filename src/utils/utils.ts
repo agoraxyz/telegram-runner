@@ -1,7 +1,9 @@
-import logger from "./logger";
+import { AxiosResponse } from "axios";
 import { ActionError, ErrorResult } from "../api/types";
+import logger from "./logger";
 
-const UnixTime = (date: Date): number => Math.floor((date as unknown as number) / 1000);
+const UnixTime = (date: Date): number =>
+  Math.floor((date as unknown as number) / 1000);
 
 const getErrorResult = (error: Error): ErrorResult => {
   let errorMsg: string;
@@ -26,4 +28,10 @@ const getErrorResult = (error: Error): ErrorResult => {
   };
 };
 
-export { UnixTime, getErrorResult };
+const logAxiosResponse = (res: AxiosResponse<any>) => {
+  logger.verbose(
+    `${res.status} ${res.statusText} data:${JSON.stringify(res.data)}`
+  );
+};
+
+export { UnixTime, getErrorResult, logAxiosResponse };

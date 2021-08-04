@@ -2,9 +2,10 @@ import axios from "axios";
 import { Markup } from "telegraf";
 import { InlineKeyboardButton } from "typegram";
 import Bot from "../Bot";
+import { fetchCommunitiesOfUser } from "./common";
 import config from "../config";
 import logger from "../utils/logger";
-import { fetchCommunitiesOfUser } from "./common";
+import { logAxiosResponse } from "../utils/utils";
 
 const helpCommand = (ctx: any): void => {
   const helpHeader =
@@ -42,6 +43,8 @@ const leaveCommand = async (ctx: any): Promise<void> => {
     const res = await axios.get(
       `${config.backendUrl}/user/getUserCommunitiesByTelegramId/${ctx.message.from.id}`
     );
+
+    logAxiosResponse(res);
 
     if (ctx.message.chat.id > 0 && res.data.length > 0) {
       const communityList: InlineKeyboardButton[][] = res.data.map(

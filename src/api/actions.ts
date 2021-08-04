@@ -23,6 +23,7 @@ const generateInvite = async (
 ): Promise<string | undefined> => {
   try {
     const isTelegramUser = await isMember(groupId, +platformUserId);
+    logger.verbose(`isMember result: ${isTelegramUser}`);
 
     if (!isTelegramUser) {
       await Bot.Client.unbanChatMember(groupId, +platformUserId);
