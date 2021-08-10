@@ -3,7 +3,6 @@ import { getGroupName, kickUser } from "../service/common";
 import Bot from "../Bot";
 import { ManageGroupsParam } from "./types";
 import logger from "../utils/logger";
-import { UnixTime } from "../utils/utils";
 
 const isMember = async (
   groupId: string,
@@ -37,7 +36,6 @@ const generateInvite = async (
     if (!isTelegramUser) {
       await Bot.Client.unbanChatMember(groupId, +platformUserId);
       const generate = await Bot.Client.createChatInviteLink(groupId, {
-        expire_date: UnixTime(new Date()) + 900,
         member_limit: 1
       });
       return generate.invite_link;
