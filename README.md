@@ -27,7 +27,7 @@ yarn install
 Create a new file called .env and add the following environment variables:
 
 ```bash
-TELEGRAM_TOKEN="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"
+BOT_TOKEN=123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
 BACKEND_URL="https://agora.space/api/"
 ```
 

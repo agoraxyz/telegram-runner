@@ -3,10 +3,10 @@
 import * as dotenv from "dotenv";
 
 const envFound = dotenv.config();
-
-if (envFound.error)
+/*
+if (envFound.error && !process.env.BOT_TOKEN)
   throw new Error("Couldn't find .env file or volumes in compose.");
-
+*/
 const telegramToken = process.env.BOT_TOKEN;
 const backendUrl = process.env.BACKEND_URL;
 const api = {
