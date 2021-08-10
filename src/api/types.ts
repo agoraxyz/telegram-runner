@@ -18,6 +18,11 @@ type CommunityResult = {
   telegramIsMember: boolean;
 };
 
+type LevelInfo = {
+  name: string;
+  levels: string[];
+};
+
 type ErrorResult = {
   errors: { msg: string; value: string[] }[];
 };
@@ -35,6 +40,7 @@ export {
   ManageGroupsParam,
   IsMemberParam,
   CommunityResult,
+  LevelInfo,
   ErrorResult,
   ActionError
 };

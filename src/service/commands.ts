@@ -6,6 +6,7 @@ import { fetchCommunitiesOfUser } from "./common";
 import config from "../config";
 import logger from "../utils/logger";
 import { logAxiosResponse } from "../utils/utils";
+import { LevelInfo } from "../api/types";
 
 const helpCommand = (ctx: any): void => {
   const helpHeader =
@@ -15,7 +16,8 @@ const helpCommand = (ctx: any): void => {
     "I will always let you know whether you can join a higher group or " +
     "whether you were kicked from a group.\n";
 
-  let commandsList = "/help - show instructions\n/ping - check if I'm alive\n";
+  let commandsList =
+    "/help - show instructions\n/ping - check if I'm alive\n/status - update your roles on every community\n";
 
   const helpFooter =
     "For more details about me read the documentation on " +
@@ -64,7 +66,6 @@ const leaveCommand = async (ctx: any): Promise<void> => {
       await ctx.reply("You are not a member of any community.");
     }
   } catch (err) {
-    console.log(err);
     logger.error(err);
   }
 };
@@ -106,4 +107,44 @@ const pingCommand = async (ctx: any): Promise<void> => {
   }
 };
 
-export { helpCommand, leaveCommand, listCommunitiesCommand, pingCommand };
+const statusUpdateCommand = async (ctx: any): Promise<void> => {
+  const { message } = ctx.update;
+  const platformUserId = message.from.id;
+  try {
+    await ctx.reply(
+      "I'll update your community accesses as soon as possible. (It could take up to 2 minutes.)"
+    );
+    const res = await axios.post(
+      `${config.backendUrl}/user/statusUpdate/`,
+      {
+        telegramId: platformUserId
+      },
+      { timeout: 150000 }
+    );
+    if (typeof res.data !== "string") {
+      await ctx.reply(
+        "Currently you should get access to these Communities below: "
+      );
+      await Promise.all(
+        res.data.map(async (c: LevelInfo) => {
+          await ctx.reply(
+            `Community Name: ${c.name}, Levels: ${c.levels.join()}`
+          );
+        })
+      );
+    } else {
+      await ctx.reply("There is no such User with this telegramId.");
+    }
+    logAxiosResponse(res);
+  } catch (err) {
+    logger.error(err);
+  }
+};
+
+export {
+  helpCommand,
+  leaveCommand,
+  listCommunitiesCommand,
+  pingCommand,
+  statusUpdateCommand
+};
