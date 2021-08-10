@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /* eslint no-underscore-dangle: ["error", { "allowAfterThis": true }] */
 
 import * as dotenv from "dotenv";
