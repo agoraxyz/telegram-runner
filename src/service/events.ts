@@ -52,11 +52,7 @@ const onChatStart = async (ctx: any): Promise<void> => {
 
         await Promise.all(
           res.data.map(async (groupId: string) => {
-            const inviteLink = await generateInvite(
-              platformUserId,
-              groupId,
-              userHash
-            );
+            const inviteLink = await generateInvite(groupId, userHash);
 
             if (inviteLink !== undefined) {
               invites.push({

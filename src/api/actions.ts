@@ -79,11 +79,7 @@ const manageGroups = async (
 
         try {
           if (!member) {
-            const inviteLink = await generateInvite(
-              platformUserId,
-              groupId,
-              userHash
-            );
+            const inviteLink = await generateInvite(groupId, userHash);
 
             if (inviteLink !== undefined) {
               invites.push({
