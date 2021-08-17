@@ -3,7 +3,7 @@ import { CommunityResult } from "../api/types";
 import Bot from "../Bot";
 import config from "../config";
 import logger from "../utils/logger";
-import { logAxiosResponse } from "../utils/utils";
+import { getUserHash, logAxiosResponse } from "../utils/utils";
 
 const getGroupName = async (groupId: string): Promise<string> =>
   ((await Bot.Client.getChat(groupId)) as { title: string }).title;
@@ -14,10 +14,10 @@ const fetchCommunitiesOfUser = async (
   logger.verbose(
     `Called fetchCommunitiesOfUser, platformUserId=${platformUserId}`
   );
+  const userHash = await getUserHash(platformUserId);
+  logger.verbose(`fetchCommunitiesOfUser userHash - ${userHash}`);
 
-  const res = await axios.get(
-    `${config.backendUrl}/communities/${platformUserId}`
-  );
+  const res = await axios.get(`${config.backendUrl}/communities/${userHash}`);
 
   logAxiosResponse(res);
 
@@ -31,15 +31,16 @@ const leaveCommunity = async (
   communityId: string
 ): Promise<void> => {
   logger.verbose(
-    `Called leaveCommunity, platformUserId=${platformUserId}, communityId=${ 
-      communityId}`
+    `Called leaveCommunity, platformUserId=${platformUserId}, communityId=${communityId}`
   );
 
   try {
+    const userHash = await getUserHash(platformUserId);
+    logger.verbose(`leaveCommunity userHash - ${userHash}`);
     const res = await axios.post(
       `${config.backendUrl}/user/removeFromPlatform`,
       {
-        platformUserId,
+        platformUserId: userHash,
         platform: config.platform,
         communityId,
         triggerKick: true

@@ -91,10 +91,13 @@ const onUserJoined = async (
   groupId: string
 ): Promise<void> => {
   try {
+    const userHash = await getUserHash(platformUserId);
+    logger.verbose(`onUserJoined userHash - ${userHash}`);
+
     const res = await axios.post(`${config.backendUrl}/user/joinedPlatform`, {
       refId,
       platform: config.platform,
-      platformUserId,
+      platformUserId: userHash,
       groupId
     });
 
@@ -115,11 +118,14 @@ const onUserRemoved = async (
   groupId: string
 ): Promise<void> => {
   try {
+    const userHash = await getUserHash(platformUserId);
+    logger.verbose(`onUserRemoved userHash - ${userHash}`);
+
     const res = await axios.post(
       `${config.backendUrl}/user/removeFromPlatform`,
       {
         platform: config.platform,
-        platformUserId,
+        platformUserId: userHash,
         groupId
       }
     );

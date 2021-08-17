@@ -5,7 +5,7 @@ import Bot from "../Bot";
 import { fetchCommunitiesOfUser } from "./common";
 import config from "../config";
 import logger from "../utils/logger";
-import { logAxiosResponse } from "../utils/utils";
+import { getUserHash, logAxiosResponse } from "../utils/utils";
 import { LevelInfo } from "../api/types";
 
 const helpCommand = (ctx: any): void => {
@@ -42,8 +42,12 @@ const helpCommand = (ctx: any): void => {
 
 const leaveCommand = async (ctx: any): Promise<void> => {
   try {
+    const platformUserId = `${ctx.message.from.id}`;
+    const userHash = await getUserHash(platformUserId);
+    logger.verbose(`leaveCommand userHash - ${userHash}`);
+
     const res = await axios.get(
-      `${config.backendUrl}/user/getUserCommunitiesByTelegramId/${ctx.message.from.id}`
+      `${config.backendUrl}/user/getUserCommunitiesByTelegramId/${userHash}`
     );
 
     logAxiosResponse(res);
@@ -109,15 +113,18 @@ const pingCommand = async (ctx: any): Promise<void> => {
 
 const statusUpdateCommand = async (ctx: any): Promise<void> => {
   const { message } = ctx.update;
-  const platformUserId = message.from.id;
+  const platformUserId = `${message.from.id}`;
   try {
     await ctx.reply(
       "I'll update your community accesses as soon as possible. (It could take up to 2 minutes.)"
     );
+    const userHash = await getUserHash(platformUserId);
+    logger.verbose(`statusUpdateCommand userHash - ${userHash}`);
+
     const res = await axios.post(
       `${config.backendUrl}/user/statusUpdate/`,
       {
-        telegramId: platformUserId
+        telegramId: userHash
       },
       { timeout: 150000 }
     );
