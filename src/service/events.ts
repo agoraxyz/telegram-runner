@@ -4,7 +4,7 @@ import { generateInvite } from "../api/actions";
 import { fetchCommunitiesOfUser, getGroupName, leaveCommunity } from "./common";
 import config from "../config";
 import logger from "../utils/logger";
-import { logAxiosResponse } from "../utils/utils";
+import { getUserHash, logAxiosResponse } from "../utils/utils";
 
 const onMessage = async (ctx: any): Promise<void> => {
   if (ctx.message.chat.id > 0) {
@@ -26,9 +26,12 @@ const onChatStart = async (ctx: any): Promise<void> => {
   if (message.chat.id > 0) {
     if (new RegExp(/^\/start [0-9]+_[0-9]+$/).test(message.text)) {
       const [refId, communityId] = message.text.split("/start ")[1].split("_");
-      const platformUserId = message.from.id;
+      const platformUserId = `${message.from.id}`;
 
       try {
+        const userHash = await getUserHash(platformUserId);
+        logger.verbose(`onChatStart userHash - ${userHash}`);
+
         await ctx.reply(
           "Thank you for joining, I'll send the invites as soon as possible."
         );
@@ -38,7 +41,7 @@ const onChatStart = async (ctx: any): Promise<void> => {
           {
             refId,
             platform: config.platform,
-            platformUserId,
+            platformUserId: userHash,
             communityId
           }
         );

@@ -1,5 +1,6 @@
 import { AxiosResponse } from "axios";
 import { ActionError, ErrorResult } from "../api/types";
+import { hmac, redisClient } from "../database";
 import logger from "./logger";
 
 const UnixTime = (date: Date): number =>
@@ -34,4 +35,15 @@ const logAxiosResponse = (res: AxiosResponse<any>) => {
   );
 };
 
-export { UnixTime, getErrorResult, logAxiosResponse };
+const getUserHash = async (platformUserId: string): Promise<string> => {
+  hmac.update(platformUserId);
+  const hashedId = hmac.digest("base64");
+  let userHash = await redisClient.getAsync(hashedId);
+  if (!userHash) {
+    redisClient.client.SET(hashedId, platformUserId);
+    userHash = await redisClient.getAsync(hashedId);
+  }
+  return userHash;
+};
+
+export { UnixTime, getErrorResult, logAxiosResponse, getUserHash };

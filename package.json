@@ -9,10 +9,12 @@
     "prod": "node build/Main.js"
   },
   "dependencies": {
+    "@types/redis": "^2.8.31",
     "axios": "^0.21.1",
     "dotenv": "^10.0.0",
     "express": "^4.17.1",
     "express-validator": "^6.11.1",
+    "redis": "^3.1.2",
     "telegraf": "^4.4.0",
     "typegram": "^3.3.1",
     "winston": "^3.3.3"
