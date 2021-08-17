@@ -28,7 +28,19 @@ Create a new file called .env and add the following environment variables:
 
 ```bash
 BOT_TOKEN=123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
-BACKEND_URL="https://agora.space/api/"
+BACKEND_URL=https://agora.space/api/
+REDIS_HOST=redis://@redis:6379
+HMAC_ALGORITHM=
+HMAC_SECRET=
+```
+
+Create another file called redis.env:
+
+```
+ALLOW_EMPTY_PASSWORD=no
+REDIS_DISABLE_COMMANDS=FLUSHDB,FLUSHALL
+REDIS_PASSWORD=
+REDIS_PORT_NUMBER=6381
 ```
 
 Run the bot:
