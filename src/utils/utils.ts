@@ -46,4 +46,17 @@ const getUserHash = async (platformUserId: string): Promise<string> => {
   return userHash;
 };
 
-export { UnixTime, getErrorResult, logAxiosResponse, getUserHash };
+const getUserPlatformId = async (
+  userHash: string
+): Promise<string | undefined> => {
+  const platformUserId = await redisClient.getAsync(userHash);
+  return platformUserId || undefined;
+};
+
+export {
+  UnixTime,
+  getErrorResult,
+  logAxiosResponse,
+  getUserHash,
+  getUserPlatformId
+};

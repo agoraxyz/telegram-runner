@@ -55,7 +55,7 @@ const controller = {
       let isTelegramMember = false;
       await Promise.all(
         params.groupIds.map(async (groupId) => {
-          const inGroup = await isMember(groupId, +params.platformUserId);
+          const inGroup = await isMember(groupId, params.userHash);
           if (inGroup) {
             isTelegramMember = true;
           }

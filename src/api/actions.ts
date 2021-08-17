@@ -3,17 +3,24 @@ import { getGroupName, kickUser } from "../service/common";
 import Bot from "../Bot";
 import { ManageGroupsParam } from "./types";
 import logger from "../utils/logger";
+import { getUserPlatformId } from "../utils/utils";
 
 const isMember = async (
   groupId: string,
-  platformUserId: number
+  userHash: string
 ): Promise<Boolean> => {
   logger.verbose(
-    `Called isMember, groupId=${groupId}, platformUserId=${platformUserId}`
+    `Called isMember, groupId=${groupId}, platformUserId=${userHash}`
   );
 
   try {
-    const member = await Bot.Client.getChatMember(groupId, platformUserId);
+    const platformUserId = await getUserPlatformId(userHash);
+    if (!platformUserId)
+      throw new Error(
+        `PlatformUserId doesn't exists for ${userHash} userHash.`
+      );
+
+    const member = await Bot.Client.getChatMember(groupId, +platformUserId);
     return member !== undefined && member.status === "member";
   } catch (_) {
     return false;
@@ -22,7 +29,8 @@ const isMember = async (
 
 const generateInvite = async (
   platformUserId: string,
-  groupId: string
+  groupId: string,
+  userHash: string
 ): Promise<string | undefined> => {
   logger.verbose(
     `Called generateInvite, platformUserId=${platformUserId}, ` +
@@ -30,7 +38,7 @@ const generateInvite = async (
   );
 
   try {
-    const isTelegramUser = await isMember(groupId, +platformUserId);
+    const isTelegramUser = await isMember(groupId, userHash);
     logger.verbose(`groupId=groupId, isMember=${isTelegramUser}`);
 
     if (!isTelegramUser) {
@@ -55,22 +63,27 @@ const manageGroups = async (
     `Called manageGroups, params=${params}, isUpgrade=${isUpgrade}`
   );
 
-  const { platformUserId } = params;
+  const { userHash } = params;
+  const platformUserId = await getUserPlatformId(userHash);
 
   let result: boolean = true;
+
+  if (!platformUserId)
+    throw new Error(`PlatformUserId doesn't exists for ${userHash} userHash.`);
 
   if (isUpgrade) {
     const invites: { link: string; name: string }[] = [];
 
     await Promise.all(
       params.groupIds.map(async (groupId) => {
-        const member = await isMember(groupId, +platformUserId);
+        const member = await isMember(groupId, userHash);
 
         try {
           if (!member) {
             const inviteLink = await generateInvite(
-              params.platformUserId,
-              groupId
+              platformUserId,
+              groupId,
+              userHash
             );
 
             if (inviteLink !== undefined) {
@@ -107,7 +120,7 @@ const manageGroups = async (
     try {
       await Promise.all(
         params.groupIds.map(async (groupId) => {
-          const member = await isMember(groupId, +platformUserId);
+          const member = await isMember(groupId, userHash);
 
           if (member) {
             kickUser(
