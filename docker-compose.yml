@@ -1,6 +1,8 @@
 version: "3.7"
 services:
   telegram-runner:
+    depends_on: 
+      - redis
     container_name: telegram-runner
     build:
       context: .
@@ -10,7 +12,29 @@ services:
       - .env
     networks:
       - runner-telegram
+      - redis-telegram
+  
+  redis:
+    security_opt:
+      - no-new-privileges
+    tmpfs:
+      - /tmp
+    container_name: redis-telegram
+    image: bitnami/redis:6.2-debian-10
+    restart: always
+    env_file:
+      - redis.env
+    networks:
+      - redis-telegram
+    ports:
+      - 6381:6381
+    volumes:
+      - redis-persistence:/bitnami/redis/data
 
 networks:
+  redis-telegram:
   runner-telegram:
     external: true
+
+volumes:
+  redis-persistence:
