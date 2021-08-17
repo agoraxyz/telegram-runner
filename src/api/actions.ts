@@ -28,20 +28,19 @@ const isMember = async (
 };
 
 const generateInvite = async (
-  platformUserId: string,
   groupId: string,
   userHash: string
 ): Promise<string | undefined> => {
-  logger.verbose(
-    `Called generateInvite, platformUserId=${platformUserId}, ` +
-      `groupId=${groupId}`
-  );
-
   try {
     const isTelegramUser = await isMember(groupId, userHash);
     logger.verbose(`groupId=groupId, isMember=${isTelegramUser}`);
+    const platformUserId = await getUserPlatformId(userHash);
+    logger.verbose(
+      `Called generateInvite, platformUserId=${platformUserId}, ` +
+        `groupId=${groupId}`
+    );
 
-    if (!isTelegramUser) {
+    if (!isTelegramUser && platformUserId) {
       await Bot.Client.unbanChatMember(groupId, +platformUserId);
       const generate = await Bot.Client.createChatInviteLink(groupId, {
         member_limit: 1
