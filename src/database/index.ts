@@ -16,4 +16,4 @@ client.on("error", (err) => {
 
 const redisClient = new RedisClient(client);
 
-export { redisClient };
+export default redisClient;
