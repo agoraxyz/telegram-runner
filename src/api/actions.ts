@@ -3,7 +3,7 @@ import { getGroupName, kickUser } from "../service/common";
 import Bot from "../Bot";
 import { ManageGroupsParam } from "./types";
 import logger from "../utils/logger";
-import { getUserPlatformId } from "../utils/utils";
+import { getUserTelegramId } from "../utils/utils";
 
 const isMember = async (
   groupId: string,
@@ -14,7 +14,7 @@ const isMember = async (
   );
 
   try {
-    const platformUserId = await getUserPlatformId(userHash);
+    const platformUserId = await getUserTelegramId(userHash);
     if (!platformUserId)
       throw new Error(
         `PlatformUserId doesn't exists for ${userHash} userHash.`
@@ -34,7 +34,7 @@ const generateInvite = async (
   try {
     const isTelegramUser = await isMember(groupId, userHash);
     logger.verbose(`groupId=groupId, isMember=${isTelegramUser}`);
-    const platformUserId = await getUserPlatformId(userHash);
+    const platformUserId = await getUserTelegramId(userHash);
     logger.verbose(
       `Called generateInvite, platformUserId=${platformUserId}, ` +
         `groupId=${groupId}`
@@ -63,7 +63,7 @@ const manageGroups = async (
   );
 
   const { userHash } = params;
-  const platformUserId = await getUserPlatformId(userHash);
+  const platformUserId = await getUserTelegramId(userHash);
 
   let result: boolean = true;
 

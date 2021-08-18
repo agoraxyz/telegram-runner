@@ -48,7 +48,7 @@ const getUserHash = async (platformUserId: string): Promise<string> => {
   return hashedId;
 };
 
-const getUserPlatformId = async (
+const getUserTelegramId = async (
   userHash: string
 ): Promise<string | undefined> => {
   const platformUserId = await redisClient.getAsync(userHash);
@@ -60,5 +60,5 @@ export {
   getErrorResult,
   logAxiosResponse,
   getUserHash,
-  getUserPlatformId
+  getUserTelegramId
 };

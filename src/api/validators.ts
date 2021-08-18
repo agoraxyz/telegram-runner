@@ -1,14 +1,14 @@
 import { body, param } from "express-validator";
 
-const getIdValidatorForParam = (fieldName: string) =>
-  param(fieldName).isString().trim().isLength({ min: 6, max: 12 }).isNumeric();
+const getHashValidatorForParam = (fieldName: string) =>
+  param(fieldName).isString().trim().isLength({ min: 44, max: 64 });
 
-const getIdValidatorForBody = (fieldName: string) =>
-  body(fieldName).isString().trim().isLength({ min: 6, max: 12 }).isNumeric();
+const getHashValidatorForBody = (fieldName: string) =>
+  body(fieldName).isString().trim().isLength({ min: 44, max: 64 });
 
 export default {
-  paramTelegramdId: getIdValidatorForParam,
-  bodyTelegramId: getIdValidatorForBody,
+  paramUserHash: getHashValidatorForParam,
+  bodyUserHash: getHashValidatorForBody,
   groupsValidator: body("groupIds").isArray({ min: 1 }),
   messageValidator: body("message").isString().trim().isLength({ min: 1 })
 };
