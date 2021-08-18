@@ -8,7 +8,7 @@ const createRouter = () => {
   router.post(
     "/upgrade",
     [
-      validators.bodyTelegramId("platformUserId"),
+      validators.bodyTelegramId("userHash"),
       validators.groupsValidator,
       validators.messageValidator
     ],
@@ -18,7 +18,7 @@ const createRouter = () => {
   router.post(
     "/downgrade",
     [
-      validators.bodyTelegramId("platformUserId"),
+      validators.bodyTelegramId("userHash"),
       validators.groupsValidator,
       validators.messageValidator
     ],
@@ -27,7 +27,7 @@ const createRouter = () => {
 
   router.post(
     "/isMember",
-    [validators.bodyTelegramId("platformUserId"), validators.groupsValidator],
+    [validators.bodyTelegramId("userHash"), validators.groupsValidator],
     controller.isMember
   );
 
