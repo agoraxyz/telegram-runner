@@ -2,7 +2,7 @@ import { AxiosResponse } from "axios";
 import { createHmac } from "crypto";
 import { ActionError, ErrorResult } from "../api/types";
 import config from "../config";
-import { redisClient } from "../database";
+import redisClient from "../database";
 import logger from "./logger";
 
 const UnixTime = (date: Date): number =>
