@@ -1,4 +1,3 @@
-import { createHmac } from "crypto";
 import redis from "redis";
 import config from "../config";
 import logger from "../utils/logger";
@@ -17,6 +16,4 @@ client.on("error", (err) => {
 
 const redisClient = new RedisClient(client);
 
-const hmac = createHmac(config.hmacAlgorithm, config.hmacAlgorithm);
-
-export { hmac, redisClient };
+export { redisClient };
