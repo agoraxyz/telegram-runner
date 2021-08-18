@@ -28,7 +28,7 @@ if (!backendUrl)
 if (!redisHost)
   throw new Error("You need to specify the REDIS_HOST in the .env file.");
 
-if (!redisHost)
+if (!hmacSecret)
   throw new Error("You need to specify the HMAC_SECRET in the .env file.");
 
 export default {
