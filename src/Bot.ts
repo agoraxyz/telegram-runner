@@ -34,6 +34,7 @@ export default class Bot {
     bot.command("list", TGCommands.listCommunitiesCommand);
     bot.command("ping", TGCommands.pingCommand);
     bot.command("status", TGCommands.statusUpdateCommand);
+    bot.command("groupid", TGCommands.groupIdCommand);
 
     // event listeners
     bot.on("message", TGEvents.onMessage);

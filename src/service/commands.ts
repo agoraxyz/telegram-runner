@@ -17,7 +17,9 @@ const helpCommand = (ctx: any): void => {
     "whether you were kicked from a group.\n";
 
   let commandsList =
-    "/help - show instructions\n/ping - check if I'm alive\n/status - update your roles on every community\n";
+    "/help - show instructions\n" +
+    "/ping - check if I'm alive\n" +
+    "/status - update your roles on every community\n";
 
   const helpFooter =
     "For more details about me read the documentation on " +
@@ -32,7 +34,7 @@ const helpCommand = (ctx: any): void => {
   }
   // group chat
   else {
-    commandsList += "";
+    commandsList += "/groupid - shows the ID of the group";
   }
 
   ctx.replyWithMarkdown(`${helpHeader}\n${commandsList}\n${helpFooter}`, {
@@ -148,10 +150,16 @@ const statusUpdateCommand = async (ctx: any): Promise<void> => {
   }
 };
 
+const groupIdCommand = async (ctx: any): Promise<void> =>
+  ctx.reply(ctx.update.message.chat.id, {
+    reply_to_message_id: ctx.update.message.message_id
+  });
+
 export {
   helpCommand,
   leaveCommand,
   listCommunitiesCommand,
   pingCommand,
-  statusUpdateCommand
+  statusUpdateCommand,
+  groupIdCommand
 };
