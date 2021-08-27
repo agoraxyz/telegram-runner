@@ -1,12 +1,12 @@
 import axios from "axios";
 import { Markup } from "telegraf";
 import { InlineKeyboardButton } from "typegram";
+import { LevelInfo } from "../api/types";
 import Bot from "../Bot";
 import { fetchCommunitiesOfUser } from "./common";
 import config from "../config";
 import logger from "../utils/logger";
 import { getUserHash, logAxiosResponse } from "../utils/utils";
-import { LevelInfo } from "../api/types";
 
 const helpCommand = (ctx: any): void => {
   const helpHeader =

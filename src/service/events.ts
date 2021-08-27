@@ -1,5 +1,6 @@
 import axios from "axios";
 import { Markup } from "telegraf";
+import Bot from "../Bot";
 import { generateInvite } from "../api/actions";
 import { fetchCommunitiesOfUser, getGroupName, leaveCommunity } from "./common";
 import config from "../config";
@@ -109,9 +110,25 @@ const onUserJoined = async (
   }
 };
 
-const onUserLeftGroup = (ctx: any): void => {
-  ctx.reply(`Bye, ${ctx.message.left_chat_member.first_name} 😢`);
+const onUserJoinedGroup = async (ctx: any): Promise<void> => {
+  logger.verbose("function: onUseJoinedGroup");
+
+  ctx.message.new_chat_members.map(async (member: any) => {
+    if (member.id === ctx.botInfo.id) {
+      Bot.Client.sendMessage(
+        ctx.message.from.id,
+        `The ID of the group "${
+          (await getGroupName(ctx.message.chat.id)) as any
+        }":\n${ctx.message.chat.id}`
+      ).catch((e) =>
+        logger.error(`Error while calling onUserJoinedGroup:\n${e}`)
+      );
+    }
+  });
 };
+
+const onUserLeftGroup = (ctx: any): void =>
+  ctx.reply(`Bye, ${ctx.message.left_chat_member.first_name} 😢`);
 
 const onUserRemoved = async (
   platformUserId: string,
@@ -180,6 +197,7 @@ export {
   onChatMemberUpdate,
   onMyChatMemberUpdate,
   onUserJoined,
+  onUserJoinedGroup,
   onUserLeftGroup,
   onUserRemoved,
   onBlocked,

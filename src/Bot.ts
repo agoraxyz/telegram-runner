@@ -37,7 +37,8 @@ export default class Bot {
     bot.command("groupid", TGCommands.groupIdCommand);
 
     // event listeners
-    bot.on("message", TGEvents.onMessage);
+    bot.on("text", TGEvents.onMessage);
+    bot.on("new_chat_members", TGEvents.onUserJoinedGroup);
     bot.on("left_chat_member", TGEvents.onUserLeftGroup);
     bot.on("chat_member", TGEvents.onChatMemberUpdate);
     bot.on("my_chat_member", TGEvents.onMyChatMemberUpdate);
