@@ -1,4 +1,6 @@
 import { Markup } from "telegraf";
+import Bot from "../Bot";
+import mtprotoApi from "../mtproto";
 import { leaveCommunity } from "./common";
 
 const confirmLeaveCommunityAction = (ctx: any): void => {
@@ -22,4 +24,55 @@ const confirmedLeaveCommunityAction = (ctx: any): void => {
   );
 };
 
-export { confirmLeaveCommunityAction, confirmedLeaveCommunityAction };
+const createGroup = async (title: string) => {
+  const { username } = await Bot.Client.getMe();
+  const userResult = await mtprotoApi.call("contacts.resolveUsername", {
+    username
+  });
+  const user_id = {
+    _: "inputUser",
+    user_id: userResult.users[0].id,
+    access_hash: userResult.users[0].access_hash
+  };
+
+  const supergroupResult = await mtprotoApi.call("channels.createChannel", {
+    megagroup: true,
+    title
+  });
+
+  const channel = {
+    _: "inputChannel",
+    channel_id: supergroupResult.chats[0].id,
+    access_hash: supergroupResult.chats[0].access_hash
+  };
+
+  await mtprotoApi.call("channels.inviteToChannel", {
+    channel,
+    users: [user_id]
+  });
+
+  await mtprotoApi.call("channels.editAdmin", {
+    channel,
+    user_id,
+    admin_rights: {
+      _: "chatAdminRights",
+      change_info: true,
+      post_messages: true,
+      edit_messages: true,
+      delete_messages: true,
+      ban_users: true,
+      invite_users: true,
+      pin_messages: true,
+      add_admins: true
+    },
+    rank: "Medusa"
+  });
+
+  await mtprotoApi.call("channels.leaveChannel", { channel });
+};
+
+export {
+  confirmLeaveCommunityAction,
+  confirmedLeaveCommunityAction,
+  createGroup
+};
