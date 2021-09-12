@@ -14,6 +14,8 @@ const hmacAlgorithm = process.env.HMAC_ALGORITHM || "sha256";
 const hmacSecret = process.env.HMAC_SECRET;
 const telegramToken = process.env.BOT_TOKEN;
 const backendUrl = process.env.BACKEND_URL;
+const mtprotoApiId = process.env.MTPROTO_API_ID;
+const mtprotoApiHash = process.env.MTPROTO_API_HASH;
 const api = {
   prefix: "/api",
   port: process.env.PORT || 8991
@@ -31,6 +33,12 @@ if (!redisHost)
 if (!hmacSecret)
   throw new Error("You need to specify the HMAC_SECRET in the .env file.");
 
+if (!mtprotoApiId)
+  throw new Error("You need to specify the MTPROTO_API_ID in the .env file.");
+
+if (!mtprotoApiHash)
+  throw new Error("You need to specify the MTPROTO_API_HASH in the .env file.");
+
 export default {
   redisHost,
   hmacAlgorithm,
@@ -38,5 +46,9 @@ export default {
   telegramToken,
   backendUrl,
   api,
-  platform: "TELEGRAM"
+  platform: "TELEGRAM",
+  mtproto: {
+    apiId: mtprotoApiId,
+    apiHash: mtprotoApiHash
+  }
 };
