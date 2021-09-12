@@ -9,6 +9,7 @@
     "prod": "node build/Main.js"
   },
   "dependencies": {
+    "@mtproto/core": "^6.0.1",
     "@types/redis": "^2.8.31",
     "axios": "^0.21.1",
     "dotenv": "^10.0.0",
