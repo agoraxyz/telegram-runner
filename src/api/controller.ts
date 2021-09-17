@@ -1,9 +1,10 @@
 import { Request, Response } from "express";
 import { validationResult } from "express-validator";
 import { isMember, manageGroups } from "./actions";
-import { IsMemberParam, ManageGroupsParam } from "./types";
+import { CreateGroupParam, IsMemberParam, ManageGroupsParam } from "./types";
 import { getErrorResult } from "../utils/utils";
 import logger from "../utils/logger";
+import { createGroup } from "../service/actions";
 
 const controller = {
   upgrade: async (req: Request, res: Response): Promise<void> => {
@@ -64,6 +65,24 @@ const controller = {
       res.status(200).json(isTelegramMember);
     } catch (err) {
       logger.error(err);
+    }
+  },
+
+  createGroup: async (req: Request, res: Response): Promise<void> => {
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+      res.status(400).json({ errors: errors.array() });
+    }
+
+    const params: CreateGroupParam = req.body;
+
+    try {
+      const result = await createGroup(params.title);
+      res.status(200).json(result);
+    } catch (err) {
+      const errorMsg = getErrorResult(err);
+      res.status(400).json(errorMsg);
     }
   }
 };

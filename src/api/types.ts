@@ -36,11 +36,16 @@ class ActionError extends Error {
   }
 }
 
+type CreateGroupParam = {
+  title: string;
+};
+
 export {
   ManageGroupsParam,
   IsMemberParam,
   CommunityResult,
   LevelInfo,
   ErrorResult,
-  ActionError
+  ActionError,
+  CreateGroupParam
 };

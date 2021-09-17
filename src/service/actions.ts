@@ -69,6 +69,8 @@ const createGroup = async (title: string) => {
   });
 
   await mtprotoApi.call("channels.leaveChannel", { channel });
+
+  return `-100${channel.channel_id}`;
 };
 
 export {

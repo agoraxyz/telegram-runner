@@ -31,6 +31,8 @@ const createRouter = () => {
     controller.isMember
   );
 
+  router.post("/group", [validators.titleValidator], controller.createGroup);
+
   return router;
 };
 

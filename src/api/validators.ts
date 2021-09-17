@@ -10,5 +10,6 @@ export default {
   paramUserHash: getHashValidatorForParam,
   bodyUserHash: getHashValidatorForBody,
   groupsValidator: body("groupIds").isArray({ min: 1 }),
-  messageValidator: body("message").isString().trim().isLength({ min: 1 })
+  messageValidator: body("message").isString().trim().isLength({ min: 1 }),
+  titleValidator: body("title").isString().trim().isLength({ min: 1 })
 };
