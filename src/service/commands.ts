@@ -44,7 +44,7 @@ const helpCommand = (ctx: any): void => {
 
 const leaveCommand = async (ctx: any): Promise<void> => {
   try {
-    const platformUserId = `${ctx.message.from.id}`;
+    const platformUserId = ctx.message.from.id;
     const userHash = await getUserHash(platformUserId);
     logger.verbose(`leaveCommand userHash - ${userHash}`);
 
@@ -115,7 +115,7 @@ const pingCommand = async (ctx: any): Promise<void> => {
 
 const statusUpdateCommand = async (ctx: any): Promise<void> => {
   const { message } = ctx.update;
-  const platformUserId = `${message.from.id}`;
+  const platformUserId = message.from.id;
   try {
     await ctx.reply(
       "I'll update your community accesses as soon as possible. (It could take up to 2 minutes.)"

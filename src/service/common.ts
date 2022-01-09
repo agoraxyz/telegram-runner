@@ -9,7 +9,7 @@ const getGroupName = async (groupId: string): Promise<string> =>
   ((await Bot.Client.getChat(groupId)) as { title: string }).title;
 
 const fetchCommunitiesOfUser = async (
-  platformUserId: string
+  platformUserId: number
 ): Promise<CommunityResult[]> => {
   logger.verbose(
     `Called fetchCommunitiesOfUser, platformUserId=${platformUserId}`
@@ -27,7 +27,7 @@ const fetchCommunitiesOfUser = async (
 };
 
 const leaveCommunity = async (
-  platformUserId: string,
+  platformUserId: number,
   communityId: string
 ): Promise<void> => {
   logger.verbose(

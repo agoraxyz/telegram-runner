@@ -8,7 +8,7 @@ import { getUserTelegramId } from "../utils/utils";
 const isMember = async (
   groupId: string,
   userHash: string
-): Promise<Boolean> => {
+): Promise<boolean> => {
   logger.verbose(
     `Called isMember, groupId=${groupId}, platformUserId=${userHash}`
   );

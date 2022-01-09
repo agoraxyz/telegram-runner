@@ -1,5 +1,6 @@
 import axios from "axios";
-import { Markup } from "telegraf";
+import { Context, Markup, NarrowedContext } from "telegraf";
+import { Update } from "typegram";
 import Bot from "../Bot";
 import { generateInvite } from "../api/actions";
 import { fetchCommunitiesOfUser, getGroupName, leaveCommunity } from "./common";
@@ -27,7 +28,7 @@ const onChatStart = async (ctx: any): Promise<void> => {
   if (message.chat.id > 0) {
     if (new RegExp(/^\/start [0-9]+_[0-9]+$/).test(message.text)) {
       const [refId, communityId] = message.text.split("/start ")[1].split("_");
-      const platformUserId = `${message.from.id}`;
+      const platformUserId = message.from.id;
 
       try {
         const userHash = await getUserHash(platformUserId);
@@ -88,8 +89,8 @@ const onChatStart = async (ctx: any): Promise<void> => {
 
 const onUserJoined = async (
   refId: string,
-  platformUserId: string,
-  groupId: string
+  platformUserId: number,
+  groupId: number
 ): Promise<void> => {
   try {
     const userHash = await getUserHash(platformUserId);
@@ -135,7 +136,7 @@ const onUserLeftGroup = (ctx: any): void => {
 };
 
 const onUserRemoved = async (
-  platformUserId: string,
+  platformUserId: number,
   groupId: string
 ): Promise<void> => {
   try {
@@ -175,7 +176,9 @@ const onBlocked = async (ctx: any): Promise<void> => {
   }
 };
 
-const onChatMemberUpdate = (ctx: any): void => {
+const onChatMemberUpdate = (
+  ctx: NarrowedContext<Context, Update.ChatMemberUpdate>
+): void => {
   const member = ctx.update.chat_member;
 
   if (member.invite_link) {
