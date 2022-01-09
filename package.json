@@ -1,7 +1,7 @@
 {
   "name": "agora-telegram-runner",
   "version": "0.0.1",
-  "description": "A Telegram bot for the Agora Space platform",
+  "description": "A Telegram bot for the Agora project",
   "main": "index.js",
   "scripts": {
     "dev": "ts-node-dev src/Main.ts",

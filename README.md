@@ -6,11 +6,11 @@
 
 ## Description
 
-Medousa is part of the [Agora project](https://github.com/AgoraSpaceDAO). She
+Medousa is part of the [Agora project](https://github.com/agoraxyz/). She
 is a ruthless greek goddess who works as a Telegram bot and does all the dirty
 work from removing intruders to providing extra privileges to premium users.
 
-- [Website](https://agora.space)
+- [Website](https://agora.xyz)
 - [Changelog](./CHANGELOG.md)
 - [License](./LICENSE)
 
@@ -28,7 +28,7 @@ Create a new file called .env and add the following environment variables:
 
 ```bash
 BOT_TOKEN=123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
-BACKEND_URL=https://agora.space/api/
+BACKEND_URL=https://api.agora.space
 REDIS_HOST=redis://@redis:6379
 HMAC_ALGORITHM=
 HMAC_SECRET=

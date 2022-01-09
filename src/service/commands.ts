@@ -11,10 +11,10 @@ import { getUserHash, logAxiosResponse } from "../utils/utils";
 const helpCommand = (ctx: any): void => {
   const helpHeader =
     "Hello there! My name is Medousa.\n" +
-    "I'm part of the [Agora](https://agora-space.vercel.app/) project and " +
+    "I'm part of the [Agora](https://agora.xyz/) project and " +
     "I am your personal assistant.\n" +
-    "I will always let you know whether you can join a higher group or " +
-    "whether you were kicked from a group.\n";
+    "I will always let you know whether you can join a guild or " +
+    "whether you were kicked from a guild.\n";
 
   let commandsList =
     "/help - show instructions\n" +
@@ -23,7 +23,7 @@ const helpCommand = (ctx: any): void => {
 
   const helpFooter =
     "For more details about me read the documentation on " +
-    "[github](https://github.com/AgoraSpaceDAO/telegram-runner).";
+    "[github](https://github.com/agoraxyz/telegram-runner).";
 
   // DM
   if (ctx.message.chat.id >= 0) {

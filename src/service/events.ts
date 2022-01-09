@@ -13,7 +13,7 @@ const onMessage = async (ctx: any): Promise<void> => {
       await ctx.reply("I'm sorry, but I couldn't interpret your request.");
       await ctx.replyWithMarkdown(
         "You can find more information on the " +
-          "[Agora](https://app.agora.space/) website."
+          "[Agora](https://agora.xyz/) website."
       );
     } catch (err) {
       logger.error(err);
