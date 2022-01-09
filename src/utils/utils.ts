@@ -8,7 +8,7 @@ import logger from "./logger";
 const UnixTime = (date: Date): number =>
   Math.floor((date as unknown as number) / 1000);
 
-const getErrorResult = (error: Error): ErrorResult => {
+const getErrorResult = (error: any): ErrorResult => {
   let errorMsg: string;
   let ids: string[];
 
