@@ -4,7 +4,7 @@
   "description": "A Telegram bot for the Agora project",
   "main": "index.js",
   "scripts": {
-    "dev": "ts-node-dev src/Main.ts",
+    "dev": "ts-node-dev --exit-child src/Main.ts",
     "build": "tsc",
     "prod": "node build/Main.js"
   },
@@ -49,7 +49,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/AgoraSpaceDAO/telegram-runner.git"
+    "url": "git+https://github.com/agoraxyz/telegram-runner.git"
   },
   "keywords": [
     "agora",
@@ -64,7 +64,7 @@
   "author": "ZGEN",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/AgoraSpaceDAO/telegram-runner/issues"
+    "url": "https://github.com/agoraxyz/telegram-runner/issues"
   },
-  "homepage": "https://github.com/AgoraSpaceDAO/telegram-runner#readme"
+  "homepage": "https://github.com/agoraxyz/telegram-runner#readme"
 }
