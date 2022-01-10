@@ -26,8 +26,8 @@ const onChatStart = async (ctx: any): Promise<void> => {
   const { message } = ctx;
 
   if (message.chat.id > 0) {
-    if (new RegExp(/^\/start [0-9]+_[0-9]+$/).test(message.text)) {
-      const [refId, communityId] = message.text.split("/start ")[1].split("_");
+    if (new RegExp(/^\/start [a-z0-9]{64}$/).test(message.text)) {
+      const refId = message.text.split("/start ")[1];
       const platformUserId = message.from.id;
 
       try {
@@ -42,13 +42,17 @@ const onChatStart = async (ctx: any): Promise<void> => {
           `${config.backendUrl}/user/getAccessibleGroupIds`,
           {
             refId,
-            platform: config.platform,
-            platformUserId: userHash,
-            communityId
+            platformUserId
           }
         );
-
         logAxiosResponse(res);
+
+        if (res.data.length === 0) {
+          ctx.reply(
+            "There aren't any groups of this guild that you have access to."
+          );
+          return;
+        }
 
         const invites: { link: string; name: string }[] = [];
 
@@ -76,7 +80,7 @@ const onChatStart = async (ctx: any): Promise<void> => {
           );
         } else {
           ctx.reply(
-            "You are already a member of the groups of this community " +
+            "You are already a member of the groups of this guild " +
               "so you will not receive any invite links."
           );
         }
