@@ -128,14 +128,26 @@ const onUserJoinedGroup = async (ctx: any): Promise<void> => {
 
   ctx.message.new_chat_members.map(async (member: any) => {
     if (member.id === ctx.botInfo.id) {
-      Bot.Client.sendMessage(
-        ctx.message.from.id,
-        `The ID of the group "${
-          (await getGroupName(ctx.message.chat.id)) as any
-        }":\n${ctx.message.chat.id}`
-      ).catch((e) =>
-        logger.error(`Error while calling onUserJoinedGroup:\n${e}`)
-      );
+      try {
+        await Bot.Client.sendMessage(
+          ctx.message.chat.id,
+          `The ID of the group "${
+            (await getGroupName(ctx.message.chat.id)) as any
+          }":\n${ctx.message.chat.id}`
+        );
+        if (ctx.message.chat.type !== "supergroup") {
+          await Bot.Client.sendMessage(
+            ctx.message.chat.id,
+            `This Group is currently not a Supergroup. Please convert your Group into Supergroup first. There is a tutorial GIF in the attachment.`
+          );
+          await Bot.Client.sendAnimation(
+            ctx.message.chat.id,
+            "https://i.imgur.com/obwfHdt.mp4"
+          );
+        }
+      } catch (error) {
+        logger.error(`Error while calling onUserJoinedGroup:\n${error}`);
+      }
     }
   });
 };
@@ -211,14 +223,15 @@ const onMyChatMemberUpdate = (ctx: any): void => {
   }
 };
 
-const onBotInvite = (ctx: any): void => {
+const onSuperGroupChatCreation = (ctx: any): void => {
   if (
-    ctx.update.my_chat_member.new_chat_member?.status === "member" &&
-    ctx.update.my_chat_member.old_chat_member?.status !== "administrator"
+    ctx.message.chat.type === "supergroup" &&
+    ctx.message.migrate_to_chat_id !== null
   ) {
-    ctx.reply(ctx.update.message.chat.id, {
-      reply_to_message_id: ctx.update.message.message_id
-    });
+    Bot.Client.sendMessage(
+      ctx.message.chat.id,
+      `The Group successfully converted into Supergroup. Please make sure, our Bot has administrator permissions still.`
+    ).catch((err) => logger.error(err));
   }
 };
 
@@ -231,6 +244,6 @@ export {
   onUserLeftGroup,
   onUserRemoved,
   onBlocked,
-  onBotInvite,
-  onMessage
+  onMessage,
+  onSuperGroupChatCreation
 };
