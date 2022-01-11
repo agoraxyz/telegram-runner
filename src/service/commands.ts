@@ -1,6 +1,6 @@
 import axios from "axios";
-import { Markup } from "telegraf";
-import { InlineKeyboardButton } from "typegram";
+import { Context, Markup, NarrowedContext } from "telegraf";
+import { InlineKeyboardButton, Message, Update } from "typegram";
 import { LevelInfo } from "../api/types";
 import Bot from "../Bot";
 import { fetchCommunitiesOfUser } from "./common";
@@ -155,11 +155,32 @@ const groupIdCommand = async (ctx: any): Promise<void> =>
     reply_to_message_id: ctx.update.message.message_id
   });
 
+const addCommand = async (
+  ctx: NarrowedContext<
+    Context,
+    {
+      message: Update.New & Update.NonChannel & Message.TextMessage;
+      update_id: number;
+    }
+  >
+): Promise<void> => {
+  await ctx.replyWithMarkdown(
+    "Click to add Medusa bot to your group",
+    Markup.inlineKeyboard([
+      Markup.button.url(
+        "Add Medusa",
+        "https://t.me/AgoraMatterBridgerBot?startgroup=true"
+      )
+    ])
+  );
+};
+
 export {
   helpCommand,
   leaveCommand,
   listCommunitiesCommand,
   pingCommand,
   statusUpdateCommand,
-  groupIdCommand
+  groupIdCommand,
+  addCommand
 };
