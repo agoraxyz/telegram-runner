@@ -211,6 +211,17 @@ const onMyChatMemberUpdate = (ctx: any): void => {
   }
 };
 
+const onBotInvite = (ctx: any): void => {
+  if (
+    ctx.update.my_chat_member.new_chat_member?.status === "member" &&
+    ctx.update.my_chat_member.old_chat_member?.status !== "administrator"
+  ) {
+    ctx.reply(ctx.update.message.chat.id, {
+      reply_to_message_id: ctx.update.message.message_id
+    });
+  }
+};
+
 export {
   onChatStart,
   onChatMemberUpdate,
@@ -220,5 +231,6 @@ export {
   onUserLeftGroup,
   onUserRemoved,
   onBlocked,
+  onBotInvite,
   onMessage
 };
