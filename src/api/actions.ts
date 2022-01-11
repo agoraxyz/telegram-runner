@@ -1,7 +1,7 @@
 import { Markup } from "telegraf";
 import { getGroupName, kickUser } from "../service/common";
 import Bot from "../Bot";
-import { ManageGroupsParam } from "./types";
+import { IsInResult, ManageGroupsParam } from "./types";
 import logger from "../utils/logger";
 import { getUserTelegramId } from "../utils/utils";
 
@@ -137,4 +137,27 @@ const manageGroups = async (
   return result;
 };
 
-export { manageGroups, generateInvite, getGroupName, isMember };
+const isIn = async (groupId: number): Promise<IsInResult> => {
+  try {
+    const chat = await Bot.Client.getChat(groupId);
+    if (chat.type !== "supergroup") {
+      return { ok: false, message: "not a supergroup" };
+    }
+    const membership = await Bot.Client.getChatMember(
+      groupId,
+      (
+        await Bot.Client.getMe()
+      ).id
+    );
+    if (membership.status !== "administrator") {
+      return { ok: false, message: "bot is not administrator in this group" };
+    }
+  } catch (err) {
+    const errMsg = err.response.description;
+    return { ok: false, message: errMsg };
+  }
+
+  return { ok: true };
+};
+
+export { manageGroups, generateInvite, getGroupName, isMember, isIn };

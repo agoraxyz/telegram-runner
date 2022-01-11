@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { param } from "express-validator";
 import { controller } from "./controller";
 import validators from "./validators";
 
@@ -32,6 +33,12 @@ const createRouter = () => {
   );
 
   router.post("/group", [validators.titleValidator], controller.createGroup);
+
+  router.get(
+    "/isIn/:groupId",
+    param("groupId").trim().isLength({ min: 1 }),
+    controller.isIn
+  );
 
   return router;
 };

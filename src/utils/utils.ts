@@ -15,6 +15,9 @@ const getErrorResult = (error: any): ErrorResult => {
   if (error instanceof ActionError) {
     errorMsg = error.message;
     ids = error.ids;
+  } else if (error?.response?.description) {
+    errorMsg = error.response.description;
+    ids = [];
   } else {
     logger.error(error);
     errorMsg = "unknown error";
