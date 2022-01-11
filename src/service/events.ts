@@ -1,6 +1,6 @@
 import axios from "axios";
 import { Context, Markup, NarrowedContext } from "telegraf";
-import { Update } from "typegram";
+import { Message, Update } from "typegram";
 import Bot from "../Bot";
 import { generateInvite } from "../api/actions";
 import { fetchCommunitiesOfUser, getGroupName, leaveCommunity } from "./common";
@@ -22,7 +22,15 @@ const onMessage = async (ctx: any): Promise<void> => {
   }
 };
 
-const onChatStart = async (ctx: any): Promise<void> => {
+const onChatStart = async (
+  ctx: NarrowedContext<
+    Context,
+    {
+      message: Update.New & Update.NonChannel & Message.TextMessage;
+      update_id: number;
+    }
+  >
+): Promise<void> => {
   const { message } = ctx;
 
   if (message.chat.id > 0) {
