@@ -237,7 +237,7 @@ const onSuperGroupChatCreation = (ctx: any): void => {
       .then((groupName) =>
         Bot.Client.sendMessage(
           ctx.message.chat.id,
-          `Warning! The NEW ID of the group "${groupName}":\n${ctx.message.chat.id}. Follow this link to automatically fill the Group ID field: https://guild-xyz-git-i137-tg-group-integration-zgen.vercel.app/create-guild?groupId=${ctx.message.chat.id}`
+          `Warning! The NEW ID of the group "${groupName}":\n${ctx.message.chat.id}`
         ).catch((err) => logger.error(err))
       )
       .catch((err) => logger.error(err));
