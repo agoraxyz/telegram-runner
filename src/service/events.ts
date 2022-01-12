@@ -71,7 +71,7 @@ const onChatStart = async (
             if (inviteLink !== undefined) {
               invites.push({
                 link: inviteLink,
-                name: await getGroupName(groupId)
+                name: await getGroupName(+groupId)
               });
             }
           })

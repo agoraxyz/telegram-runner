@@ -84,7 +84,7 @@ const manageGroups = async (
             if (inviteLink !== undefined) {
               invites.push({
                 link: inviteLink,
-                name: await getGroupName(groupId)
+                name: await getGroupName(+groupId)
               });
             }
           } else {
@@ -119,7 +119,7 @@ const manageGroups = async (
 
           if (member) {
             kickUser(
-              groupId,
+              +groupId,
               platformUserId,
               "have not fullfilled the requirements"
             );

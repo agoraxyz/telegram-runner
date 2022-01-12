@@ -5,7 +5,7 @@ import config from "../config";
 import logger from "../utils/logger";
 import { getUserHash, logAxiosResponse } from "../utils/utils";
 
-const getGroupName = async (groupId: string): Promise<string> =>
+const getGroupName = async (groupId: number): Promise<string> =>
   ((await Bot.Client.getChat(groupId)) as { title: string }).title;
 
 const fetchCommunitiesOfUser = async (
@@ -56,7 +56,7 @@ const leaveCommunity = async (
 };
 
 const kickUser = async (
-  groupId: string,
+  groupId: number,
   platformUserId: string,
   reason: string
 ): Promise<void> => {
