@@ -141,7 +141,11 @@ const isIn = async (groupId: number): Promise<IsInResult> => {
   try {
     const chat = await Bot.Client.getChat(groupId);
     if (chat.type !== "supergroup") {
-      return { ok: false, message: "not a supergroup" };
+      return {
+        ok: false,
+        message:
+          "This Group is not a SuperGroup! Please convert into a Supergroup first!"
+      };
     }
     const membership = await Bot.Client.getChatMember(
       groupId,
@@ -150,7 +154,10 @@ const isIn = async (groupId: number): Promise<IsInResult> => {
       ).id
     );
     if (membership.status !== "administrator") {
-      return { ok: false, message: "bot is not administrator in this group" };
+      return {
+        ok: false,
+        message: "It seems like our Bot hasn't got the right permissions."
+      };
     }
   } catch (err) {
     const errMsg = err.response.description;
