@@ -129,12 +129,6 @@ const onUserJoinedGroup = async (ctx: any): Promise<void> => {
   ctx.message.new_chat_members.map(async (member: any) => {
     if (member.id === ctx.botInfo.id) {
       try {
-        await Bot.Client.sendMessage(
-          ctx.message.chat.id,
-          `The ID of the group "${
-            (await getGroupName(ctx.message.chat.id)) as any
-          }":\n${ctx.message.chat.id}`
-        );
         if (ctx.message.chat.type !== "supergroup") {
           await Bot.Client.sendMessage(
             ctx.message.chat.id,
@@ -143,6 +137,13 @@ const onUserJoinedGroup = async (ctx: any): Promise<void> => {
           await Bot.Client.sendAnimation(
             ctx.message.chat.id,
             "https://i.imgur.com/obwfHdt.mp4"
+          );
+        } else {
+          await Bot.Client.sendMessage(
+            ctx.message.chat.id,
+            `The ID of the group "${
+              (await getGroupName(ctx.message.chat.id)) as any
+            }":\n${ctx.message.chat.id}`
           );
         }
       } catch (error) {
