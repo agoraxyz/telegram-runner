@@ -232,14 +232,14 @@ const onSuperGroupChatCreation = (ctx: any): void => {
       ctx.message.chat.id,
       `The Group successfully converted into Supergroup. Please make sure, our Bot has administrator permissions still.`
     ).catch((err) => logger.error(err));
-    Bot.Client.sendMessage(
-      ctx.message.chat.id,
-      `Warning! The NEW ID of the group "${
-        getGroupName(ctx.message.chat.id).catch((err) =>
-          logger.error(err)
-        ) as any
-      }":\n${ctx.message.chat.id}`
-    ).catch((err) => logger.error(err));
+    getGroupName(ctx.message.chat.id)
+      .then((groupName) =>
+        Bot.Client.sendMessage(
+          ctx.message.chat.id,
+          `Warning! The NEW ID of the group "${groupName}":\n${ctx.message.chat.id}`
+        ).catch((err) => logger.error(err))
+      )
+      .catch((err) => logger.error(err));
   }
 };
 
