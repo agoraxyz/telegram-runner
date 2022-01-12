@@ -160,8 +160,11 @@ const isIn = async (groupId: number): Promise<IsInResult> => {
       };
     }
   } catch (err) {
-    const errMsg = err.response.description;
-    return { ok: false, message: errMsg };
+    return {
+      ok: false,
+      message:
+        "You have to add @Guildxyz_bot to your Telegram group to continue!"
+    };
   }
 
   return { ok: true };
