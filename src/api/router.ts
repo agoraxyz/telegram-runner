@@ -40,6 +40,12 @@ const createRouter = () => {
     controller.isIn
   );
 
+  router.get(
+    "/:groupId",
+    param("groupId").trim().isLength({ min: 1 }),
+    controller.getGroupNameById
+  );
+
   return router;
 };
 
