@@ -114,7 +114,7 @@ const controller = {
     const { groupId } = req.params;
 
     try {
-      const result = await getGroupName(groupId);
+      const result = await getGroupName(+groupId);
       res.status(200).json(result);
     } catch (err) {
       const errorMsg = getErrorResult(err);
