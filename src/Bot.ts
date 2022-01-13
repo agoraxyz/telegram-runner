@@ -41,7 +41,6 @@ export default class Bot {
     bot.on("text", TGEvents.onMessage);
     bot.on("left_chat_member", TGEvents.onUserLeftGroup);
     bot.on("my_chat_member", TGEvents.onMyChatMemberUpdate);
-    bot.on("message", TGEvents.onSuperGroupChatCreation);
 
     // action listeners
     bot.action(
