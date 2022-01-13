@@ -129,21 +129,6 @@ const onUserJoined = async (
   }
 };
 
-const onUserJoinedGroup = async (ctx: any): Promise<void> => {
-  logger.verbose("function: onUseJoinedGroup");
-
-  ctx.message.new_chat_members.map(async (member: any) => {
-    if (member.id === ctx.botInfo.id) {
-      try {
-        logger.verbose(`${JSON.stringify(ctx.message)}`);
-        await checkSuperGroup(ctx.message.chat.type, ctx.message.chat.id);
-      } catch (error) {
-        logger.error(`Error while calling onUserJoinedGroup:\n${error}`);
-      }
-    }
-  });
-};
-
 // eslint-disable-next-line no-unused-vars
 const onUserLeftGroup = (ctx: any): void => {
   // if (mtprotoApi.getUser().user.id !== ctx.update.message.left_chat_member.id) {
@@ -220,6 +205,12 @@ const onMyChatMemberUpdate = async (ctx: any): Promise<void> => {
         ctx.update.my_chat_member.chat.id
       );
     }
+    if (ctx.update.my_chat_member.new_chat_member?.status === "administrator") {
+      await Bot.Client.sendMessage(
+        ctx.update.my_chat_member.chat.id,
+        `The Guild Bot has administrator privileges from now! We are ready to roll!`
+      );
+    }
   } catch (error) {
     logger.error(`Error while calling onUserJoinedGroup:\n${error}`);
   }
@@ -258,7 +249,6 @@ export {
   onChatMemberUpdate,
   onMyChatMemberUpdate,
   onUserJoined,
-  onUserJoinedGroup,
   onUserLeftGroup,
   onUserRemoved,
   onBlocked,
