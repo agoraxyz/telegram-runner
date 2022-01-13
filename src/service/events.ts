@@ -246,7 +246,6 @@ const onSuperGroupChatCreation = async (ctx: any): Promise<void> => {
       } else {
         await sendMessageForSupergroup(groupId);
       }
-      await sendMessageForSupergroup(groupId);
     } catch (error) {
       logger.error(error);
     }
