@@ -135,6 +135,7 @@ const onUserJoinedGroup = async (ctx: any): Promise<void> => {
   ctx.message.new_chat_members.map(async (member: any) => {
     if (member.id === ctx.botInfo.id) {
       try {
+        logger.verbose(`${JSON.stringify(ctx.message)}`);
         await checkSuperGroup(ctx.message.chat.type, ctx.message.chat.id);
       } catch (error) {
         logger.error(`Error while calling onUserJoinedGroup:\n${error}`);
@@ -213,13 +214,12 @@ const onMyChatMemberUpdate = async (ctx: any): Promise<void> => {
     if (ctx.update.my_chat_member.new_chat_member?.status === "kicked") {
       onBlocked(ctx);
     }
-    if (ctx.update.my_chat_member.new_chat_member?.status !== "administrator") {
-      await Bot.Client.sendMessage(
-        ctx.message.chat.id,
-        `The Guildxyz_bot hasn't got the right permissions to manage this group. Please make sure, our Bot has administrator permissions.`
+    if (ctx.update.my_chat_member.new_chat_member?.status === "member") {
+      await checkSuperGroup(
+        ctx.update.my_chat_member.chat.type,
+        ctx.update.my_chat_member.chat.id
       );
     }
-    await checkSuperGroup(ctx.message.chat.type, ctx.message.chat.id);
   } catch (error) {
     logger.error(`Error while calling onUserJoinedGroup:\n${error}`);
   }
