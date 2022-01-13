@@ -243,6 +243,7 @@ const onSuperGroupChatCreation = async (ctx: any): Promise<void> => {
           groupId,
           `The Guildxyz_bot hasn't got the right permissions to manage this group. Please make sure, our Bot has administrator permissions.`
         );
+        await Bot.Client.sendAnimation(groupId, `${config.assets.adminVideo}`);
       } else {
         await sendMessageForSupergroup(groupId);
       }
