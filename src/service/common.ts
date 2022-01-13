@@ -83,4 +83,30 @@ const kickUser = async (
   }
 };
 
-export { getGroupName, fetchCommunitiesOfUser, leaveCommunity, kickUser };
+const sendMessageForSupergroup = async (groupId: number) => {
+  const groupName = await getGroupName(groupId);
+  await Bot.Client.sendMessage(
+    groupId,
+    `This is the group ID of "${groupName}":\n${groupId} . Paste it to the Guild creation interface!`
+  );
+  await Bot.Client.sendPhoto(groupId, `${config.assets.groupIdImage}`);
+};
+
+const checkSuperGroup = async (chatType: string, groupId: number) => {
+  if (chatType !== "supergroup") {
+    await Bot.Client.sendMessage(
+      groupId,
+      `This Group is currently not a Supergroup. Please convert your Group into Supergroup first. There is a tutorial GIF in the attachment.`
+    );
+    await Bot.Client.sendAnimation(groupId, `${config.assets.supergroupVideo}`);
+  } else await sendMessageForSupergroup(groupId);
+};
+
+export {
+  getGroupName,
+  fetchCommunitiesOfUser,
+  leaveCommunity,
+  kickUser,
+  checkSuperGroup,
+  sendMessageForSupergroup
+};
