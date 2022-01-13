@@ -200,7 +200,10 @@ const onMyChatMemberUpdate = async (ctx: any): Promise<void> => {
     if (ctx.update.my_chat_member.new_chat_member?.status === "kicked") {
       onBlocked(ctx);
     }
-    if (ctx.update.my_chat_member.new_chat_member?.status === "member") {
+    if (
+      ctx.update.my_chat_member.new_chat_member?.status === "member" ||
+      ctx.update.my_chat_member.old_chat_member?.status === "member"
+    ) {
       const groupId = ctx.update.my_chat_member.chat.id;
       if (ctx.update.my_chat_member.chat.type !== "supergroup")
         await sendNotASuperGroup(groupId);
@@ -219,30 +222,6 @@ const onMyChatMemberUpdate = async (ctx: any): Promise<void> => {
   }
 };
 
-const onSuperGroupChatCreation = async (ctx: any): Promise<void> => {
-  if (
-    ctx.message.chat.type === "supergroup" &&
-    ctx.message.migrate_to_chat_id !== null
-  ) {
-    try {
-      const groupId = ctx.message.chat.id;
-      await Bot.Client.sendMessage(
-        groupId,
-        `The Group successfully converted into Supergroup. Please make sure, our Bot has administrator permissions still.`
-      );
-      const bot = await Bot.Client.getMe();
-      const membership = await Bot.Client.getChatMember(groupId, bot.id);
-      if (membership.status !== "administrator") {
-        await sendNotAnAdministrator(groupId);
-      } else {
-        await sendMessageForSupergroup(groupId);
-      }
-    } catch (error) {
-      logger.error(error);
-    }
-  }
-};
-
 export {
   onChatStart,
   onChatMemberUpdate,
@@ -251,6 +230,5 @@ export {
   onUserLeftGroup,
   onUserRemoved,
   onBlocked,
-  onMessage,
-  onSuperGroupChatCreation
+  onMessage
 };
