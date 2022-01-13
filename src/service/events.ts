@@ -3,7 +3,13 @@ import { Context, Markup, NarrowedContext } from "telegraf";
 import { Message, Update } from "typegram";
 import Bot from "../Bot";
 import { generateInvite } from "../api/actions";
-import { fetchCommunitiesOfUser, getGroupName, leaveCommunity } from "./common";
+import {
+  checkSuperGroup,
+  fetchCommunitiesOfUser,
+  getGroupName,
+  leaveCommunity,
+  sendMessageForSupergroup
+} from "./common";
 import config from "../config";
 import logger from "../utils/logger";
 import { getUserHash, logAxiosResponse } from "../utils/utils";
@@ -129,23 +135,7 @@ const onUserJoinedGroup = async (ctx: any): Promise<void> => {
   ctx.message.new_chat_members.map(async (member: any) => {
     if (member.id === ctx.botInfo.id) {
       try {
-        if (ctx.message.chat.type !== "supergroup") {
-          await Bot.Client.sendMessage(
-            ctx.message.chat.id,
-            `This Group is currently not a Supergroup. Please convert your Group into Supergroup first. There is a tutorial GIF in the attachment.`
-          );
-          await Bot.Client.sendAnimation(
-            ctx.message.chat.id,
-            "https://i.imgur.com/obwfHdt.mp4"
-          );
-        } else {
-          await Bot.Client.sendMessage(
-            ctx.message.chat.id,
-            `The ID of the group "${
-              (await getGroupName(ctx.message.chat.id)) as any
-            }":\n${ctx.message.chat.id}`
-          );
-        }
+        await checkSuperGroup(ctx.message.chat.type, ctx.message.chat.id);
       } catch (error) {
         logger.error(`Error while calling onUserJoinedGroup:\n${error}`);
       }
@@ -218,29 +208,48 @@ const onChatMemberUpdate = (
   }
 };
 
-const onMyChatMemberUpdate = (ctx: any): void => {
-  if (ctx.update.my_chat_member.new_chat_member?.status === "kicked") {
-    onBlocked(ctx);
+const onMyChatMemberUpdate = async (ctx: any): Promise<void> => {
+  try {
+    if (ctx.update.my_chat_member.new_chat_member?.status === "kicked") {
+      onBlocked(ctx);
+    }
+    if (ctx.update.my_chat_member.new_chat_member?.status !== "administrator") {
+      await Bot.Client.sendMessage(
+        ctx.message.chat.id,
+        `The Guildxyz_bot hasn't got the right permissions to manage this group. Please make sure, our Bot has administrator permissions.`
+      );
+    }
+    await checkSuperGroup(ctx.message.chat.type, ctx.message.chat.id);
+  } catch (error) {
+    logger.error(`Error while calling onUserJoinedGroup:\n${error}`);
   }
 };
 
-const onSuperGroupChatCreation = (ctx: any): void => {
+const onSuperGroupChatCreation = async (ctx: any): Promise<void> => {
   if (
     ctx.message.chat.type === "supergroup" &&
     ctx.message.migrate_to_chat_id !== null
   ) {
-    Bot.Client.sendMessage(
-      ctx.message.chat.id,
-      `The Group successfully converted into Supergroup. Please make sure, our Bot has administrator permissions still.`
-    ).catch((err) => logger.error(err));
-    getGroupName(ctx.message.chat.id)
-      .then((groupName) =>
-        Bot.Client.sendMessage(
-          ctx.message.chat.id,
-          `Warning! The NEW ID of the group "${groupName}":\n${ctx.message.chat.id}`
-        ).catch((err) => logger.error(err))
-      )
-      .catch((err) => logger.error(err));
+    try {
+      const groupId = ctx.message.chat.id;
+      await Bot.Client.sendMessage(
+        groupId,
+        `The Group successfully converted into Supergroup. Please make sure, our Bot has administrator permissions still.`
+      );
+      const bot = await Bot.Client.getMe();
+      const membership = await Bot.Client.getChatMember(groupId, bot.id);
+      if (membership.status !== "administrator") {
+        await Bot.Client.sendMessage(
+          groupId,
+          `The Guildxyz_bot hasn't got the right permissions to manage this group. Please make sure, our Bot has administrator permissions.`
+        );
+      } else {
+        await sendMessageForSupergroup(groupId);
+      }
+      await sendMessageForSupergroup(groupId);
+    } catch (error) {
+      logger.error(error);
+    }
   }
 };
 
