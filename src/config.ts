@@ -20,6 +20,8 @@ const api = {
   prefix: "/api",
   port: process.env.PORT || 8991
 };
+const supergroupVideo = process.env.VIDEO_URL;
+const groupIdImage = process.env.GROUPID_IMAGE;
 
 if (!telegramToken)
   throw new Error("You need to specify the bot's BOT_TOKEN in the .env file.");
@@ -50,5 +52,9 @@ export default {
   mtproto: {
     apiId: mtprotoApiId,
     apiHash: mtprotoApiHash
+  },
+  assets: {
+    supergroupVideo,
+    groupIdImage
   }
 };
