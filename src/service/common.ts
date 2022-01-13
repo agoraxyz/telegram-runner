@@ -92,14 +92,20 @@ const sendMessageForSupergroup = async (groupId: number) => {
   await Bot.Client.sendPhoto(groupId, `${config.assets.groupIdImage}`);
 };
 
-const checkSuperGroup = async (chatType: string, groupId: number) => {
-  if (chatType !== "supergroup") {
-    await Bot.Client.sendMessage(
-      groupId,
-      `This Group is currently not a Supergroup. Please convert your Group into Supergroup first. There is a tutorial GIF in the attachment.`
-    );
-    await Bot.Client.sendAnimation(groupId, `${config.assets.supergroupVideo}`);
-  } else await sendMessageForSupergroup(groupId);
+const sendNotASuperGroup = async (groupId: number) => {
+  await Bot.Client.sendMessage(
+    groupId,
+    `This Group is currently not a Supergroup. Please convert your Group into Supergroup first. There is a tutorial GIF in the attachment.`
+  );
+  await Bot.Client.sendAnimation(groupId, `${config.assets.supergroupVideo}`);
+};
+
+const sendNotAnAdministrator = async (groupId: number) => {
+  await Bot.Client.sendMessage(
+    groupId,
+    `The Guildxyz_bot hasn't got the right permissions to manage this group. Please make sure, our Bot has administrator permissions.`
+  );
+  await Bot.Client.sendAnimation(groupId, `${config.assets.adminVideo}`);
 };
 
 export {
@@ -107,6 +113,7 @@ export {
   fetchCommunitiesOfUser,
   leaveCommunity,
   kickUser,
-  checkSuperGroup,
-  sendMessageForSupergroup
+  sendNotASuperGroup,
+  sendMessageForSupergroup,
+  sendNotAnAdministrator
 };

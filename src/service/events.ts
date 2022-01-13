@@ -4,11 +4,12 @@ import { Message, Update } from "typegram";
 import Bot from "../Bot";
 import { generateInvite } from "../api/actions";
 import {
-  checkSuperGroup,
+  sendNotASuperGroup,
   fetchCommunitiesOfUser,
   getGroupName,
   leaveCommunity,
-  sendMessageForSupergroup
+  sendMessageForSupergroup,
+  sendNotAnAdministrator
 } from "./common";
 import config from "../config";
 import logger from "../utils/logger";
@@ -200,16 +201,18 @@ const onMyChatMemberUpdate = async (ctx: any): Promise<void> => {
       onBlocked(ctx);
     }
     if (ctx.update.my_chat_member.new_chat_member?.status === "member") {
-      await checkSuperGroup(
-        ctx.update.my_chat_member.chat.type,
-        ctx.update.my_chat_member.chat.id
-      );
-    }
-    if (ctx.update.my_chat_member.new_chat_member?.status === "administrator") {
-      await Bot.Client.sendMessage(
-        ctx.update.my_chat_member.chat.id,
-        `The Guild Bot has administrator privileges from now! We are ready to roll!`
-      );
+      const groupId = ctx.update.my_chat_member.chat.id;
+      if (ctx.update.my_chat_member.chat.type !== "supergroup")
+        await sendNotASuperGroup(groupId);
+      else if (
+        ctx.update.my_chat_member.new_chat_member?.status === "administrator"
+      ) {
+        await Bot.Client.sendMessage(
+          groupId,
+          `The Guild Bot has administrator privileges from now! We are ready to roll!`
+        );
+        await sendMessageForSupergroup(groupId);
+      } else await sendNotAnAdministrator(groupId);
     }
   } catch (error) {
     logger.error(`Error while calling onUserJoinedGroup:\n${error}`);
@@ -230,11 +233,7 @@ const onSuperGroupChatCreation = async (ctx: any): Promise<void> => {
       const bot = await Bot.Client.getMe();
       const membership = await Bot.Client.getChatMember(groupId, bot.id);
       if (membership.status !== "administrator") {
-        await Bot.Client.sendMessage(
-          groupId,
-          `The Guildxyz_bot hasn't got the right permissions to manage this group. Please make sure, our Bot has administrator permissions.`
-        );
-        await Bot.Client.sendAnimation(groupId, `${config.assets.adminVideo}`);
+        await sendNotAnAdministrator(groupId);
       } else {
         await sendMessageForSupergroup(groupId);
       }
