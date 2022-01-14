@@ -9,7 +9,7 @@ const createRouter = () => {
   router.post(
     "/upgrade",
     [
-      validators.bodyUserHash("userHash"),
+      validators.bodyPlatformUserId("platformUserId"),
       validators.groupsValidator,
       validators.messageValidator
     ],
@@ -19,7 +19,7 @@ const createRouter = () => {
   router.post(
     "/downgrade",
     [
-      validators.bodyUserHash("userHash"),
+      validators.bodyPlatformUserId("platformUserId"),
       validators.groupsValidator,
       validators.messageValidator
     ],
@@ -28,7 +28,10 @@ const createRouter = () => {
 
   router.post(
     "/isMember",
-    [validators.bodyUserHash("userHash"), validators.groupsValidator],
+    [
+      validators.bodyPlatformUserId("platoformUserId"),
+      validators.groupsValidator
+    ],
     controller.isMember
   );
 

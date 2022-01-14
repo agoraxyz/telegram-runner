@@ -1,12 +1,12 @@
 // prettier-ignore
 type ManageGroupsParam = {
-  userHash: string;
+  platformUserId: number;
   groupIds      : string[];
   message       : string;
 };
 
 type IsMemberParam = {
-  userHash: string;
+  platformUserId: number;
   groupIds: string[];
 };
 
