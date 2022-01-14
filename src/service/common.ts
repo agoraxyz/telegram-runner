@@ -3,7 +3,7 @@ import { CommunityResult } from "../api/types";
 import Bot from "../Bot";
 import config from "../config";
 import logger from "../utils/logger";
-import { getUserHash, logAxiosResponse } from "../utils/utils";
+import { logAxiosResponse } from "../utils/utils";
 
 const getGroupName = async (groupId: number): Promise<string> =>
   ((await Bot.Client.getChat(groupId)) as { title: string }).title;
@@ -14,10 +14,10 @@ const fetchCommunitiesOfUser = async (
   logger.verbose(
     `Called fetchCommunitiesOfUser, platformUserId=${platformUserId}`
   );
-  const userHash = await getUserHash(platformUserId);
-  logger.verbose(`fetchCommunitiesOfUser userHash - ${userHash}`);
 
-  const res = await axios.get(`${config.backendUrl}/communities/${userHash}`);
+  const res = await axios.get(
+    `${config.backendUrl}/communities/${platformUserId}`
+  );
 
   logAxiosResponse(res);
 
@@ -35,12 +35,10 @@ const leaveCommunity = async (
   );
 
   try {
-    const userHash = await getUserHash(platformUserId);
-    logger.verbose(`leaveCommunity userHash - ${userHash}`);
     const res = await axios.post(
       `${config.backendUrl}/user/removeFromPlatform`,
       {
-        platformUserId: userHash,
+        platformUserId,
         platform: config.platform,
         communityId,
         triggerKick: true
@@ -57,7 +55,7 @@ const leaveCommunity = async (
 
 const kickUser = async (
   groupId: number,
-  platformUserId: string,
+  platformUserId: number,
   reason: string
 ): Promise<void> => {
   logger.verbose(

@@ -13,7 +13,7 @@ import {
 } from "./common";
 import config from "../config";
 import logger from "../utils/logger";
-import { getUserHash, logAxiosResponse } from "../utils/utils";
+import { logAxiosResponse } from "../utils/utils";
 
 const onMessage = async (ctx: any): Promise<void> => {
   if (ctx.message.chat.id > 0) {
@@ -46,9 +46,6 @@ const onChatStart = async (
       const platformUserId = message.from.id;
 
       try {
-        const userHash = await getUserHash(platformUserId);
-        logger.verbose(`onChatStart userHash - ${userHash}`);
-
         await ctx.reply(
           "Thank you for joining, I'll send the invites as soon as possible."
         );
@@ -73,7 +70,7 @@ const onChatStart = async (
 
         await Promise.all(
           res.data.map(async (groupId: string) => {
-            const inviteLink = await generateInvite(groupId, userHash);
+            const inviteLink = await generateInvite(groupId, platformUserId);
 
             if (inviteLink !== undefined) {
               invites.push({
@@ -112,13 +109,10 @@ const onUserJoined = async (
   groupId: number
 ): Promise<void> => {
   try {
-    const userHash = await getUserHash(platformUserId);
-    logger.verbose(`onUserJoined userHash - ${userHash}`);
-
     const res = await axios.post(`${config.backendUrl}/user/joinedPlatform`, {
       refId,
       platform: config.platform,
-      platformUserId: userHash,
+      platformUserId,
       groupId
     });
 
@@ -142,14 +136,11 @@ const onUserRemoved = async (
   groupId: string
 ): Promise<void> => {
   try {
-    const userHash = await getUserHash(platformUserId);
-    logger.verbose(`onUserRemoved userHash - ${userHash}`);
-
     const res = await axios.post(
       `${config.backendUrl}/user/removeFromPlatform`,
       {
         platform: config.platform,
-        platformUserId: userHash,
+        platformUserId,
         groupId
       }
     );
