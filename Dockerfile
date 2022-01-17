@@ -39,6 +39,6 @@ RUN apk update --no-cache \
 COPY --chown=node:node --from=builder /app/node_modules ./node_modules
 COPY --chown=node:node --from=builder /app/build ./build
 
-EXPOSE 8991
+EXPOSE 8990
 
 CMD ["/usr/local/bin/dumb-init", "node", "build/Main.js"]
