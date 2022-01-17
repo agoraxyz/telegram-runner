@@ -1,10 +1,10 @@
 {
   "name": "agora-telegram-runner",
   "version": "0.0.1",
-  "description": "A Telegram bot for the Agora Space platform",
+  "description": "A Telegram bot for the Agora project",
   "main": "index.js",
   "scripts": {
-    "dev": "ts-node-dev src/Main.ts",
+    "dev": "ts-node-dev --exit-child src/Main.ts",
     "build": "tsc",
     "prod": "node build/Main.js"
   },
@@ -15,7 +15,6 @@
     "dotenv": "^10.0.0",
     "express": "^4.17.1",
     "express-validator": "^6.11.1",
-    "redis": "^3.1.2",
     "telegraf": "^4.4.0",
     "typegram": "^3.3.1",
     "winston": "^3.3.3"
@@ -30,7 +29,7 @@
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-import": "^2.23.4",
     "husky": "^4.3.8",
-    "lint-staged": "^11.0.0",
+    "lint-staged": "^12.1.7",
     "prettier": "^2.3.1",
     "pretty-quick": "^3.1.0",
     "ts-node": "^10.0.0",
@@ -49,7 +48,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/AgoraSpaceDAO/telegram-runner.git"
+    "url": "git+https://github.com/agoraxyz/telegram-runner.git"
   },
   "keywords": [
     "agora",
@@ -64,7 +63,7 @@
   "author": "ZGEN",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/AgoraSpaceDAO/telegram-runner/issues"
+    "url": "https://github.com/agoraxyz/telegram-runner/issues"
   },
-  "homepage": "https://github.com/AgoraSpaceDAO/telegram-runner#readme"
+  "homepage": "https://github.com/agoraxyz/telegram-runner#readme"
 }
