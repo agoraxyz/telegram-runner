@@ -197,13 +197,13 @@ const onChatMemberUpdate = (
       );
 
       onUserJoined(member.from.id, member.chat.id);
+    } else {
+      kickUser(
+        member.chat.id,
+        member.from.id,
+        "haven't joined through Guild interface!"
+      );
     }
-  } else {
-    kickUser(
-      member.chat.id,
-      member.from.id,
-      "haven't joined through Guild interface!"
-    );
   }
 };
 
