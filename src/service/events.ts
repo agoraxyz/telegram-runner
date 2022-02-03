@@ -9,7 +9,8 @@ import {
   getGroupName,
   leaveCommunity,
   sendMessageForSupergroup,
-  sendNotAnAdministrator
+  sendNotAnAdministrator,
+  kickUser
 } from "./common";
 import config from "../config";
 import logger from "../utils/logger";
@@ -134,13 +135,6 @@ const onUserJoined = async (
   }
 };
 
-// eslint-disable-next-line no-unused-vars
-const onUserLeftGroup = (ctx: any): void => {
-  // if (mtprotoApi.getUser().user.id !== ctx.update.message.left_chat_member.id) {
-  //   ctx.reply(`Bye, ${ctx.message.left_chat_member.first_name} 😢`);
-  // }
-};
-
 const onUserRemoved = async (
   platformUserId: number,
   groupId: string
@@ -179,6 +173,15 @@ const onBlocked = async (ctx: any): Promise<void> => {
   }
 };
 
+const onUserLeftGroup = async (ctx: any): Promise<void> => {
+  if (ctx.update.message.left_chat_member.id) {
+    await onUserRemoved(
+      ctx.update.message.left_chat_member.id,
+      ctx.update.message.chat.id
+    );
+  }
+};
+
 const onChatMemberUpdate = (
   ctx: NarrowedContext<Context, Update.ChatMemberUpdate>
 ): void => {
@@ -186,13 +189,21 @@ const onChatMemberUpdate = (
 
   if (member.invite_link) {
     const invLink = member.invite_link.invite_link;
+    logger.verbose(`join inviteLink ${invLink}`);
+    if (invLink.includes("?start=") && invLink.length === 96) {
+      logger.verbose(
+        `function: onChatMemberUpdate, user: ${member.from.id}, ` +
+          `chat: ${member.chat.id}, invite: ${invLink}`
+      );
 
-    logger.verbose(
-      `function: onChatMemberUpdate, user: ${member.from.id}, ` +
-        `chat: ${member.chat.id}, invite: ${invLink}`
+      onUserJoined(member.from.id, member.chat.id);
+    }
+  } else {
+    kickUser(
+      member.chat.id,
+      member.from.id,
+      "haven't joined through Guild interface!"
     );
-
-    onUserJoined(member.from.id, member.chat.id);
   }
 };
 
