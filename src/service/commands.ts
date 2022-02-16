@@ -1,12 +1,14 @@
 import axios from "axios";
 import { Context, Markup, NarrowedContext } from "telegraf";
 import { InlineKeyboardButton, Message, Update } from "typegram";
+import dayjs from "dayjs";
 import { LevelInfo } from "../api/types";
 import Bot from "../Bot";
 import { fetchCommunitiesOfUser } from "./common";
 import config from "../config";
 import logger from "../utils/logger";
 import { logAxiosResponse } from "../utils/utils";
+import pollStorage from "./pollStorage";
 
 const helpCommand = (ctx: any): void => {
   const helpHeader =
@@ -170,6 +172,155 @@ const addCommand = async (
   );
 };
 
+const newPoll = async (ctx: any): Promise<void> => {
+  try {
+    const memberStatus = (
+      await Bot.Client.getChatMember(
+        ctx.message.chat.id,
+        Number(ctx.message.from.id)
+      )
+    ).status;
+    if (!(memberStatus === "creator" || memberStatus === "administrator")) {
+      ctx.reply("You are not an admin.");
+      return;
+    }
+    if (ctx.message.chat.type !== "group") {
+      ctx.reply("Please use this command in a group.");
+    } else if (!pollStorage.getUserStep(ctx.message.from.id)) {
+        await Bot.Client.sendMessage(
+          ctx.message.from.id,
+          "Let's start creating your poll. You can use /reset or /cancel to restart or stop the process any time."
+        );
+        await Bot.Client.sendMessage(
+          ctx.message.from.id,
+          "First, send me the question of your poll.",
+          {
+            reply_markup: { force_reply: true }
+          }
+        );
+        pollStorage.initPoll(
+          ctx.message.from.id,
+          `${ctx.chat.id  }:${  ctx.message.message_id}`
+        );
+        pollStorage.setUserStep(ctx.message.from.id, 1);
+      }
+  } catch (err) {
+    logger.error(err);
+  }
+};
+
+const startPoll = async (ctx: any): Promise<void> => {
+  try {
+    if (ctx.message.chat.type !== "private") {
+      return;
+    }
+    if (pollStorage.getUserStep(ctx.message.chat.type) < 4) {
+      Bot.Client.sendMessage(
+        ctx.message.chat.type,
+        "A poll must have more than one option. Please send me a second one.",
+        {
+          reply_markup: { force_reply: true }
+        }
+      );
+      return;
+    } 
+      const pollId = pollStorage.getPollId(ctx.message.from.id);
+      const poll = pollStorage.getPoll(pollId);
+      const chatId = pollId.split(";").pop().split(":")[0];
+
+      const buttons: { text: string; callback_data: string }[] = [];
+
+      let pollText = `${poll.quiestion  }\n`;
+
+      poll.options.forEach((option) => {
+        pollText = `${pollText  }-${  option  }: 0% \n`;
+        const button = {
+          text: option,
+          callback_data: `${option  };${  pollId}`
+        };
+        buttons.push(button);
+      });
+
+      const duration = poll.date.split(":");
+
+      const expDate = dayjs()
+        .add(parseInt[duration[0]], "day")
+        .add(parseInt[duration[1]], "hour")
+        .add(parseInt[duration[2]], "minute")
+        .format("YYYY-MM-DDTHH:mm");
+
+      const res = await axios.post(
+        `${config.backendUrl}/tgPoll`,
+        {
+          pollId,
+          question: poll.quiestion,
+          expDate,
+          options: poll.options
+        },
+        { timeout: 150000 }
+      );
+      if (res.status === 400) {
+        Bot.Client.sendMessage(
+          ctx.message.chat.type,
+          "Something went wrong. Please try again or contact us."
+        );
+        return;
+      }
+
+      const voteButtons = { reply_markup: { inline_keyboard: [buttons] } };
+
+      pollStorage.deleteMemory(ctx.message.from.id);
+
+      await Bot.Client.sendMessage(chatId, pollText, voteButtons);
+      logAxiosResponse(res);
+    
+  } catch (err) {
+    logger.error(err);
+  }
+};
+
+const resetPoll = async (ctx: any): Promise<void> => {
+  try {
+    if (ctx.message.chat.type !== "private") {
+      return;
+    }
+    if (pollStorage.getUserStep(ctx.message.chat.type) > 0) {
+      pollStorage.deleteMemory(ctx.message.from.id);
+      await Bot.Client.sendMessage(
+        ctx.message.from.id,
+        "The poll creation process has been reset. Now you can create a new poll. " +
+          "If you want to create a poll for a different group, use /cancel instead."
+      );
+      await Bot.Client.sendMessage(
+        ctx.message.from.id,
+        "First, send me the question of your poll.",
+        {
+          reply_markup: { force_reply: true }
+        }
+      );
+    }
+  } catch (err) {
+    logger.error(err);
+  }
+};
+
+const cancelPoll = async (ctx: any): Promise<void> => {
+  try {
+    if (ctx.message.chat.type !== "private") {
+      return;
+    }
+    if (pollStorage.getUserStep(ctx.message.chat.type) > 0) {
+      pollStorage.deleteMemory(ctx.message.from.id);
+      await Bot.Client.sendMessage(
+        ctx.message.from.id,
+        "The poll creation process has been cancelled. Use /poll to create a new poll."
+      );
+    }
+  } catch (err) {
+    logger.error(err);
+  }
+};
+
 export {
   helpCommand,
   leaveCommand,
@@ -177,5 +328,9 @@ export {
   pingCommand,
   statusUpdateCommand,
   groupIdCommand,
-  addCommand
+  addCommand,
+  newPoll,
+  startPoll,
+  resetPoll,
+  cancelPoll
 };
