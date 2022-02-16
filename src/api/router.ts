@@ -29,7 +29,7 @@ const createRouter = () => {
   router.post(
     "/isMember",
     [
-      validators.bodyPlatformUserId("platoformUserId"),
+      validators.bodyPlatformUserId("platformUserId"),
       validators.groupsValidator
     ],
     controller.isMember
