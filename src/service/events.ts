@@ -356,7 +356,7 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
   try {
     const data = ctx.update.callback_query.data.split(";");
     const pollId = data.pop();
-    const question = pollStorage.getPoll(pollId).quiestion;
+    const {question} = pollStorage.getPoll(pollId);
     let text = ctx.update.callback_query.message.text
       .replace(question, "")
       .split(" ");

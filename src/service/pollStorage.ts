@@ -1,5 +1,5 @@
 type Poll = {
-  quiestion: string;
+  question: string;
   options: string[];
   date: string;
 };
@@ -21,7 +21,7 @@ const initPoll = (userId: string, pollId: string): void => {
 const savePollQuestion = (userId: string, question: string): void => {
   const pollOptions: string[] = [];
   const pollId = pollOfUser.get(userId);
-  polls.set(pollId, { quiestion: question, options: pollOptions, date: "" });
+  polls.set(pollId, { question, options: pollOptions, date: "" });
 };
 
 const savePollOption = (userId: string, option: string): boolean => {
@@ -29,11 +29,10 @@ const savePollOption = (userId: string, option: string): boolean => {
   const poll = polls.get(pollId);
   if (poll.options.includes(option)) {
     return false;
-  } 
-    poll.options.push(option);
-    polls.set(pollId, poll);
-    return true;
-  
+  }
+  poll.options.push(option);
+  polls.set(pollId, poll);
+  return true;
 };
 
 const savePollExpDate = (userId: string, date: string): void => {

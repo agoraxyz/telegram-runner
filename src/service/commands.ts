@@ -230,7 +230,7 @@ const startPoll = async (ctx: any): Promise<void> => {
 
     const buttons: { text: string; callback_data: string }[] = [];
 
-    let pollText = `${poll.quiestion}\n`;
+    let pollText = `${poll.question}\n`;
 
     poll.options.forEach((option) => {
       pollText = `${pollText}-${option}: 0% \n`;
@@ -253,7 +253,7 @@ const startPoll = async (ctx: any): Promise<void> => {
       `${config.backendUrl}/tgPoll`,
       {
         pollId,
-        question: poll.quiestion,
+        question: poll.question,
         expDate,
         options: poll.options
       },
