@@ -214,9 +214,9 @@ const startPoll = async (ctx: any): Promise<void> => {
     if (ctx.message.chat.type !== "private") {
       return;
     }
-    if (pollStorage.getUserStep(ctx.message.chat.type) < 4) {
+    if (pollStorage.getUserStep(ctx.message.from.id) < 4) {
       Bot.Client.sendMessage(
-        ctx.message.chat.type,
+        ctx.message.from.id,
         "A poll must have more than one option. Please send me a second one.",
         {
           reply_markup: { force_reply: true }
@@ -261,7 +261,7 @@ const startPoll = async (ctx: any): Promise<void> => {
     );
     if (res.status === 400) {
       Bot.Client.sendMessage(
-        ctx.message.chat.type,
+        ctx.message.from.id,
         "Something went wrong. Please try again or contact us."
       );
       return;
@@ -283,7 +283,7 @@ const resetPoll = async (ctx: any): Promise<void> => {
     if (ctx.message.chat.type !== "private") {
       return;
     }
-    if (pollStorage.getUserStep(ctx.message.chat.type) > 0) {
+    if (pollStorage.getUserStep(ctx.message.from.id) > 0) {
       pollStorage.deleteMemory(ctx.message.from.id);
       await Bot.Client.sendMessage(
         ctx.message.from.id,
@@ -308,7 +308,7 @@ const cancelPoll = async (ctx: any): Promise<void> => {
     if (ctx.message.chat.type !== "private") {
       return;
     }
-    if (pollStorage.getUserStep(ctx.message.chat.type) > 0) {
+    if (pollStorage.getUserStep(ctx.message.from.id) > 0) {
       pollStorage.deleteMemory(ctx.message.from.id);
       await Bot.Client.sendMessage(
         ctx.message.from.id,

@@ -35,8 +35,7 @@ const onMessage = async (ctx: any): Promise<void> => {
   }
   if (
     ctx.update.message.chat.type === "private" &&
-    ctx.update.message.reply_to_message.from.username ===
-      process.env.BOT_USERNAME
+    ctx.update.message.reply_to_message.from.username === config.botUsername
   ) {
     try {
       const step = pollStorage.getUserStep(ctx.update.message.from.id);
