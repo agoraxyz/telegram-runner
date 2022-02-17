@@ -380,7 +380,7 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
       return;
     }
 
-    if (dayjs().isBefore(dayjs(poll.data.expDate))) {
+    if (dayjs().isBefore(dayjs(poll.data.expDate, "YYYY-MM-DDTHH:mm"))) {
       const voteResponse = await axios.post(
         `${config.backendUrl}/tgPoll/vote`,
         {
@@ -390,7 +390,7 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
         }
       );
 
-      if (voteResponse.status === 400 && !voteResponse.data) {
+      if (voteResponse.data.length === 0) {
         return;
       }
     }
@@ -415,7 +415,7 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
 
     text = question + text.join(" ");
 
-    if (dayjs().isAfter(dayjs(poll.data.expDate))) {
+    if (dayjs().isAfter(dayjs(poll.data.expDate, "YYYY-MM-DDTHH:mm"))) {
       // Delete buttons
       Bot.Client.editMessageText(
         ctx.update.callback_query.message.chat.id,

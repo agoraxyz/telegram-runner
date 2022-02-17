@@ -244,9 +244,9 @@ const startPoll = async (ctx: any): Promise<void> => {
     const duration = poll.date.split(":");
 
     const expDate = dayjs()
-      .add(parseInt[duration[0]], "day")
-      .add(parseInt[duration[1]], "hour")
-      .add(parseInt[duration[2]], "minute")
+      .add(parseInt(duration[0], 10), "day")
+      .add(parseInt(duration[1], 10), "hour")
+      .add(parseInt(duration[2], 10), "minute")
       .format("YYYY-MM-DDTHH:mm");
 
     const res = await axios.post(
@@ -259,13 +259,6 @@ const startPoll = async (ctx: any): Promise<void> => {
       },
       { timeout: 150000 }
     );
-    if (res.status === 400) {
-      Bot.Client.sendMessage(
-        ctx.message.from.id,
-        "Something went wrong. Please try again or contact us."
-      );
-      return;
-    }
 
     const voteButtons = { reply_markup: { inline_keyboard: [buttons] } };
 
@@ -274,6 +267,11 @@ const startPoll = async (ctx: any): Promise<void> => {
     await Bot.Client.sendMessage(chatId, pollText, voteButtons);
     logAxiosResponse(res);
   } catch (err) {
+    pollStorage.deleteMemory(ctx.message.from.id);
+    Bot.Client.sendMessage(
+      ctx.message.from.id,
+      "Something went wrong. Please try again or contact us."
+    );
     logger.error(err);
   }
 };
