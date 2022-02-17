@@ -184,26 +184,26 @@ const newPoll = async (ctx: any): Promise<void> => {
       ctx.reply("You are not an admin.");
       return;
     }
-    if (ctx.message.chat.type !== "group") {
-      ctx.reply("Please use this command in a group.");
+    if (ctx.message.chat.type === "private") {
+      ctx.reply("Please use this command in a guild.");
     } else if (!pollStorage.getUserStep(ctx.message.from.id)) {
-        await Bot.Client.sendMessage(
-          ctx.message.from.id,
-          "Let's start creating your poll. You can use /reset or /cancel to restart or stop the process any time."
-        );
-        await Bot.Client.sendMessage(
-          ctx.message.from.id,
-          "First, send me the question of your poll.",
-          {
-            reply_markup: { force_reply: true }
-          }
-        );
-        pollStorage.initPoll(
-          ctx.message.from.id,
-          `${ctx.chat.id  }:${  ctx.message.message_id}`
-        );
-        pollStorage.setUserStep(ctx.message.from.id, 1);
-      }
+      await Bot.Client.sendMessage(
+        ctx.message.from.id,
+        "Let's start creating your poll. You can use /reset or /cancel to restart or stop the process any time."
+      );
+      await Bot.Client.sendMessage(
+        ctx.message.from.id,
+        "First, send me the question of your poll.",
+        {
+          reply_markup: { force_reply: true }
+        }
+      );
+      pollStorage.initPoll(
+        ctx.message.from.id,
+        `${ctx.chat.id}:${ctx.message.message_id}`
+      );
+      pollStorage.setUserStep(ctx.message.from.id, 1);
+    }
   } catch (err) {
     logger.error(err);
   }
@@ -223,57 +223,56 @@ const startPoll = async (ctx: any): Promise<void> => {
         }
       );
       return;
-    } 
-      const pollId = pollStorage.getPollId(ctx.message.from.id);
-      const poll = pollStorage.getPoll(pollId);
-      const chatId = pollId.split(";").pop().split(":")[0];
+    }
+    const pollId = pollStorage.getPollId(ctx.message.from.id);
+    const poll = pollStorage.getPoll(pollId);
+    const chatId = pollId.split(";").pop().split(":")[0];
 
-      const buttons: { text: string; callback_data: string }[] = [];
+    const buttons: { text: string; callback_data: string }[] = [];
 
-      let pollText = `${poll.quiestion  }\n`;
+    let pollText = `${poll.quiestion}\n`;
 
-      poll.options.forEach((option) => {
-        pollText = `${pollText  }-${  option  }: 0% \n`;
-        const button = {
-          text: option,
-          callback_data: `${option  };${  pollId}`
-        };
-        buttons.push(button);
-      });
+    poll.options.forEach((option) => {
+      pollText = `${pollText}-${option}: 0% \n`;
+      const button = {
+        text: option,
+        callback_data: `${option};${pollId}`
+      };
+      buttons.push(button);
+    });
 
-      const duration = poll.date.split(":");
+    const duration = poll.date.split(":");
 
-      const expDate = dayjs()
-        .add(parseInt[duration[0]], "day")
-        .add(parseInt[duration[1]], "hour")
-        .add(parseInt[duration[2]], "minute")
-        .format("YYYY-MM-DDTHH:mm");
+    const expDate = dayjs()
+      .add(parseInt[duration[0]], "day")
+      .add(parseInt[duration[1]], "hour")
+      .add(parseInt[duration[2]], "minute")
+      .format("YYYY-MM-DDTHH:mm");
 
-      const res = await axios.post(
-        `${config.backendUrl}/tgPoll`,
-        {
-          pollId,
-          question: poll.quiestion,
-          expDate,
-          options: poll.options
-        },
-        { timeout: 150000 }
+    const res = await axios.post(
+      `${config.backendUrl}/tgPoll`,
+      {
+        pollId,
+        question: poll.quiestion,
+        expDate,
+        options: poll.options
+      },
+      { timeout: 150000 }
+    );
+    if (res.status === 400) {
+      Bot.Client.sendMessage(
+        ctx.message.chat.type,
+        "Something went wrong. Please try again or contact us."
       );
-      if (res.status === 400) {
-        Bot.Client.sendMessage(
-          ctx.message.chat.type,
-          "Something went wrong. Please try again or contact us."
-        );
-        return;
-      }
+      return;
+    }
 
-      const voteButtons = { reply_markup: { inline_keyboard: [buttons] } };
+    const voteButtons = { reply_markup: { inline_keyboard: [buttons] } };
 
-      pollStorage.deleteMemory(ctx.message.from.id);
+    pollStorage.deleteMemory(ctx.message.from.id);
 
-      await Bot.Client.sendMessage(chatId, pollText, voteButtons);
-      logAxiosResponse(res);
-    
+    await Bot.Client.sendMessage(chatId, pollText, voteButtons);
+    logAxiosResponse(res);
   } catch (err) {
     logger.error(err);
   }

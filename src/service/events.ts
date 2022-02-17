@@ -361,12 +361,10 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
       .replace(question, "")
       .split(" ");
     const voterOption = data.join(";");
-    const {reply_markup} = ctx.update.callback_query.message;
+    const { reply_markup } = ctx.update.callback_query.message;
     const userId = ctx.update.callback_query.from.id;
     let allVotes = 0;
 
-    // const poll = get poll
-    // ha lejárt akko a gombok ne legyenek rajta
     const poll = await axios.get(`${config.backendUrl}/tgPoll/${pollId}`);
 
     logAxiosResponse(poll);
@@ -403,13 +401,13 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
 
     let j: number = 0;
     for (let i = 0; i < text.length; i += 1) {
-      if (text[i] === `\n-${  poll.data.options[j]  }:`) {
+      if (text[i] === `\n-${poll.data.options[j]}:`) {
         if (pollResult[poll.data.options[j]] > 0) {
           const persentage = (
             (allVotes / pollResult[poll.data.options[j]]) *
             100
           ).toFixed(2);
-          text[i + 1] = `${persentage  }%`;
+          text[i + 1] = `${persentage}%`;
           j += 1;
         }
       }
