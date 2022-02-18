@@ -403,7 +403,7 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
       if (newPollText[i] === `\n-${poll.data.options[j]}:`) {
         if (pollResult.data[poll.data.options[j]] > 0) {
           const persentage = (
-            (allVotes / pollResult.data[poll.data.options[j]]) *
+            (pollResult.data[poll.data.options[j]] / allVotes) *
             100
           ).toFixed(2);
           newPollText[i + 1] = `${persentage}%`;
