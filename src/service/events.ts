@@ -356,16 +356,16 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
   try {
     const data = ctx.update.callback_query.data.split(";");
     const pollId = data.pop();
-    const {question} = pollStorage.getPoll(pollId);
-    let text = ctx.update.callback_query.message.text
-      .replace(question, "")
-      .split(" ");
     const voterOption = data.join(";");
     const { reply_markup } = ctx.update.callback_query.message;
     const userId = ctx.update.callback_query.from.id;
     let allVotes = 0;
 
     const poll = await axios.get(`${config.backendUrl}/tgPoll/${pollId}`);
+    const {question} = poll.data;
+    let text = ctx.update.callback_query.message.text
+      .replace(question, "")
+      .split(" ");
 
     logAxiosResponse(poll);
     if (poll.data.length === 0) {
