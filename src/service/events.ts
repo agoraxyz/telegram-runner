@@ -371,14 +371,6 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
       return;
     }
 
-    const pollResult = await axios.get(
-      `${config.backendUrl}/tgPoll/result/${pollId}`
-    );
-    logAxiosResponse(pollResult);
-    if (pollResult.data.length === 0) {
-      return;
-    }
-
     if (dayjs().isBefore(dayjs(poll.data.expDate, "YYYY-MM-DDTHH:mm"))) {
       const voteResponse = await axios.post(
         `${config.backendUrl}/tgPoll/vote`,
@@ -392,6 +384,14 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
       if (voteResponse.data.length === 0) {
         return;
       }
+    }
+
+    const pollResult = await axios.get(
+      `${config.backendUrl}/tgPoll/result/${pollId}`
+    );
+    logAxiosResponse(pollResult);
+    if (pollResult.data.length === 0) {
+      return;
     }
 
     poll.data.options.forEach((option: string) => {
