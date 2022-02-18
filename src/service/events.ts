@@ -365,7 +365,6 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
     const { question } = poll.data;
     const pollText = ctx.update.callback_query.message.text;
     let newPollText = pollText.replace(question, "").split(" ");
-    let pollResult: AxiosResponse<any>;
 
     logAxiosResponse(poll);
     if (poll.data.length === 0) {
@@ -381,17 +380,12 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
           option: voterOption
         }
       );
-
       logger.verbose(`Vote response: ${voteResponse.data}`);
-
-      pollResult = await axios.get(
-        `${config.backendUrl}/tgPoll/result/${pollId}`
-      );
-    } else {
-      pollResult = await axios.get(
-        `${config.backendUrl}/tgPoll/result/${pollId}`
-      );
     }
+
+    const pollResult = await axios.get(
+      `${config.backendUrl}/tgPoll/result/${pollId}`
+    );
 
     logAxiosResponse(pollResult);
     if (pollResult.data.length === 0) {
@@ -411,8 +405,8 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
             100
           ).toFixed(2);
           newPollText[i + 1] = `${persentage}%`;
-          j += 1;
         }
+        j += 1;
       }
     }
 
