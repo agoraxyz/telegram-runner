@@ -395,15 +395,15 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
     }
 
     poll.data.options.forEach((option: string) => {
-      allVotes += pollResult[option];
+      allVotes += pollResult.data[option];
     });
 
     let j: number = 0;
     for (let i = 0; i < newPollText.length; i += 1) {
       if (newPollText[i] === `\n-${poll.data.options[j]}:`) {
-        if (pollResult[poll.data.options[j]] > 0) {
+        if (pollResult.data[poll.data.options[j]] > 0) {
           const persentage = (
-            (allVotes / pollResult[poll.data.options[j]]) *
+            (allVotes / pollResult.data[poll.data.options[j]]) *
             100
           ).toFixed(2);
           newPollText[i + 1] = `${persentage}%`;
