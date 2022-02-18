@@ -362,10 +362,9 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
     let allVotes = 0;
 
     const poll = await axios.get(`${config.backendUrl}/tgPoll/${pollId}`);
-    const {question} = poll.data;
-    let text = ctx.update.callback_query.message.text
-      .replace(question, "")
-      .split(" ");
+    const { question } = poll.data;
+    const pollText = ctx.update.callback_query.message.text;
+    let newPollText = pollText.replace(question, "").split(" ");
 
     logAxiosResponse(poll);
     if (poll.data.length === 0) {
@@ -400,20 +399,20 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
     });
 
     let j: number = 0;
-    for (let i = 0; i < text.length; i += 1) {
-      if (text[i] === `\n-${poll.data.options[j]}:`) {
+    for (let i = 0; i < newPollText.length; i += 1) {
+      if (newPollText[i] === `\n-${poll.data.options[j]}:`) {
         if (pollResult[poll.data.options[j]] > 0) {
           const persentage = (
             (allVotes / pollResult[poll.data.options[j]]) *
             100
           ).toFixed(2);
-          text[i + 1] = `${persentage}%`;
+          newPollText[i + 1] = `${persentage}%`;
           j += 1;
         }
       }
     }
 
-    text = question + text.join(" ");
+    newPollText = question + newPollText.join(" ");
 
     if (dayjs().isAfter(dayjs(poll.data.expDate, "YYYY-MM-DDTHH:mm"))) {
       // Delete buttons
@@ -421,8 +420,12 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
         ctx.update.callback_query.message.chat.id,
         ctx.update.callback_query.message.message_id,
         undefined,
-        text
+        newPollText
       );
+      return;
+    }
+
+    if (newPollText === pollText) {
       return;
     }
 
@@ -430,7 +433,7 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
       ctx.update.callback_query.message.chat.id,
       ctx.update.callback_query.message.message_id,
       undefined,
-      text,
+      newPollText,
       { reply_markup }
     );
   } catch (err) {
