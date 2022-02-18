@@ -358,7 +358,7 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
     const pollId = data.pop();
     const voterOption = data.join(";");
     const { reply_markup } = ctx.update.callback_query.message;
-    const userId = ctx.update.callback_query.from.id;
+    const platformUserId = ctx.update.callback_query.from.id;
     let allVotes = 0;
 
     const poll = await axios.get(`${config.backendUrl}/tgPoll/${pollId}`);
@@ -384,7 +384,7 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
         `${config.backendUrl}/tgPoll/vote`,
         {
           pollId,
-          userId,
+          platformUserId,
           option: voterOption
         }
       );
