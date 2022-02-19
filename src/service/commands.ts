@@ -282,7 +282,9 @@ const resetPoll = async (ctx: any): Promise<void> => {
       return;
     }
     if (pollStorage.getUserStep(ctx.message.from.id) > 0) {
+      const pollId = pollStorage.getPollId(ctx.message.from.id);
       pollStorage.deleteMemory(ctx.message.from.id);
+      pollStorage.initPoll(ctx.message.from.id, pollId);
       await Bot.Client.sendMessage(
         ctx.message.from.id,
         "The poll creation process has been reset. Now you can create a new poll. " +
