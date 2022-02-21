@@ -186,9 +186,10 @@ const newPoll = async (ctx: any): Promise<void> => {
     }
     if (ctx.message.chat.type !== "supergroup") {
       ctx.reply("Please use this command in a guild.");
-    } else if (!pollStorage.getUserStep(ctx.message.from.id)) {
+    } else {
       const userStep = pollStorage.getUserStep(ctx.message.from.id);
-      if (userStep) {
+      // eslint-disable-next-line no-extra-boolean-cast
+      if (Boolean(userStep)) {
         pollStorage.deleteMemory(ctx.message.from.id);
       }
 
@@ -233,6 +234,11 @@ const startPoll = async (ctx: any): Promise<void> => {
     const pollId = pollStorage.getPollId(ctx.message.from.id);
     const poll = pollStorage.getPoll(pollId);
     const chatId = pollId.split(";").pop().split(":")[0];
+
+    // for testing
+    logger.verbose(`chat: ${chatId}`);
+    logger.verbose(`poll: ${poll}`);
+    logger.verbose(`pollId: ${pollId}`);
 
     const voteButtonRow: { text: string; callback_data: string }[] = [];
     const listVotersButton = {
