@@ -405,6 +405,7 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
             100
           ).toFixed(2);
           newPollText[i + 1] = `${persentage}%`;
+          newPollText[i + 3] = `${pollResult.data[poll.data.options[j]]}`;
         }
         j += 1;
       }
