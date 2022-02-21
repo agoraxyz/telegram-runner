@@ -7,7 +7,7 @@ import Bot from "../Bot";
 import { fetchCommunitiesOfUser } from "./common";
 import config from "../config";
 import logger from "../utils/logger";
-import { logAxiosResponse, extractBackendErrorMessage } from "../utils/utils";
+import { logAxiosResponse } from "../utils/utils";
 import pollStorage from "./pollStorage";
 
 const helpCommand = (ctx: any): void => {
@@ -184,12 +184,11 @@ const newPoll = async (ctx: any): Promise<void> => {
       ctx.reply("You are not an admin.");
       return;
     }
-    if (ctx.message.chat.type !== "supergroup") {
+    if (ctx.message.chat.type !== "group") {
       ctx.reply("Please use this command in a guild.");
     } else {
       const userStep = pollStorage.getUserStep(ctx.message.from.id);
-      // eslint-disable-next-line no-extra-boolean-cast
-      if (Boolean(userStep)) {
+      if (userStep) {
         pollStorage.deleteMemory(ctx.message.from.id);
       }
 
@@ -237,7 +236,7 @@ const startPoll = async (ctx: any): Promise<void> => {
 
     // for testing
     logger.verbose(`chat: ${chatId}`);
-    logger.verbose(`poll: ${poll}`);
+    logger.verbose(`poll: ${JSON.stringify(poll)}`);
     logger.verbose(`pollId: ${pollId}`);
 
     const voteButtonRow: { text: string; callback_data: string }[] = [];
@@ -263,12 +262,17 @@ const startPoll = async (ctx: any): Promise<void> => {
 
     const duration = poll.date.split(":");
 
+    logger.verbose(`duration: ${duration}`);
+
     const startDate = dayjs().toISOString();
     const expDate = dayjs()
       .add(parseInt(duration[0], 10), "day")
       .add(parseInt(duration[1], 10), "hour")
       .add(parseInt(duration[2], 10), "minute")
       .toISOString();
+
+    logger.verbose(`startDate: ${startDate}`);
+    logger.verbose(`expDate: ${expDate}`);
 
     const res = await axios.post(
       `${config.backendUrl}/tgPoll`,
@@ -282,6 +286,8 @@ const startPoll = async (ctx: any): Promise<void> => {
       { timeout: 150000 }
     );
 
+    logAxiosResponse(res);
+
     const inlineKeyboard = {
       reply_markup: {
         inline_keyboard: [voteButtonRow, [listVotersButton, updateResultButton]]
@@ -291,18 +297,18 @@ const startPoll = async (ctx: any): Promise<void> => {
     pollStorage.deleteMemory(ctx.message.from.id);
 
     await Bot.Client.sendMessage(chatId, pollText, inlineKeyboard);
-    logAxiosResponse(res);
   } catch (err) {
     pollStorage.deleteMemory(ctx.message.from.id);
     Bot.Client.sendMessage(
       ctx.message.from.id,
       "Something went wrong. Please try again or contact us."
     );
-
+    /*
     const rerrorMessage = extractBackendErrorMessage(err);
     if (rerrorMessage === "Poll can't be created for this guild.") {
       await Bot.Client.sendMessage(ctx.message.from.id, rerrorMessage);
     }
+    */
     logger.error(err);
   }
 };
