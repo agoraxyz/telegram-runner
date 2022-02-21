@@ -184,7 +184,7 @@ const newPoll = async (ctx: any): Promise<void> => {
       ctx.reply("You are not an admin.");
       return;
     }
-    if (ctx.message.chat.type !== "group") {
+    if (ctx.message.chat.type !== "supergroup") {
       ctx.reply("Please use this command in a guild.");
     } else {
       const userStep = pollStorage.getUserStep(ctx.message.from.id);
