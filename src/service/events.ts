@@ -380,7 +380,7 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
           option: voterOption
         }
       );
-      logger.verbose(`Vote response: ${voteResponse.data}`);
+      logAxiosResponse(voteResponse);
     }
 
     const pollResult = await axios.get(

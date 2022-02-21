@@ -37,4 +37,12 @@ const logAxiosResponse = (res: AxiosResponse<any>) => {
   );
 };
 
-export { UnixTime, getErrorResult, logAxiosResponse };
+const extractBackendErrorMessage = (error: any) =>
+  error.response?.data?.errors[0]?.msg;
+
+export {
+  UnixTime,
+  getErrorResult,
+  logAxiosResponse,
+  extractBackendErrorMessage
+};

@@ -7,7 +7,7 @@ import Bot from "../Bot";
 import { fetchCommunitiesOfUser } from "./common";
 import config from "../config";
 import logger from "../utils/logger";
-import { logAxiosResponse } from "../utils/utils";
+import { logAxiosResponse, extractBackendErrorMessage } from "../utils/utils";
 import pollStorage from "./pollStorage";
 
 const helpCommand = (ctx: any): void => {
@@ -184,13 +184,19 @@ const newPoll = async (ctx: any): Promise<void> => {
       ctx.reply("You are not an admin.");
       return;
     }
-    if (ctx.message.chat.type === "private") {
+    if (ctx.message.chat.type !== "supergroup") {
       ctx.reply("Please use this command in a guild.");
     } else if (!pollStorage.getUserStep(ctx.message.from.id)) {
+      const userStep = pollStorage.getUserStep(ctx.message.from.id);
+      if (userStep) {
+        pollStorage.deleteMemory(ctx.message.from.id);
+      }
+
       await Bot.Client.sendMessage(
         ctx.message.from.id,
         "Let's start creating your poll. You can use /reset or /cancel to restart or stop the process any time."
       );
+
       await Bot.Client.sendMessage(
         ctx.message.from.id,
         "First, send me the question of your poll.",
@@ -243,6 +249,7 @@ const startPoll = async (ctx: any): Promise<void> => {
 
     const duration = poll.date.split(":");
 
+    const startDate = dayjs().format("YYYY-MM-DDTHH:mm");
     const expDate = dayjs()
       .add(parseInt(duration[0], 10), "day")
       .add(parseInt(duration[1], 10), "hour")
@@ -254,6 +261,7 @@ const startPoll = async (ctx: any): Promise<void> => {
       {
         pollId,
         question: poll.question,
+        startDate,
         expDate,
         options: poll.options
       },
@@ -272,6 +280,11 @@ const startPoll = async (ctx: any): Promise<void> => {
       ctx.message.from.id,
       "Something went wrong. Please try again or contact us."
     );
+
+    const rerrorMessage = extractBackendErrorMessage(err);
+    if (rerrorMessage === "Poll can't be created for this guild.") {
+      await Bot.Client.sendMessage(ctx.message.from.id, rerrorMessage);
+    }
     logger.error(err);
   }
 };
