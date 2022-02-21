@@ -354,8 +354,12 @@ const onMyChatMemberUpdate = async (ctx: any): Promise<void> => {
 
 const onCallbackQuery = async (ctx: any): Promise<void> => {
   try {
-    const data = ctx.update.callback_query.data.split(";");
-    const pollId = data.pop();
+    const data: string[] = ctx.update.callback_query.data.split(";");
+
+    // if(data[data.length - 1] === "ListVoters"){
+    // }
+
+    const pollId: string = data.pop();
     const voterOption = data.join(";");
     const { reply_markup } = ctx.update.callback_query.message;
     const platformUserId = ctx.update.callback_query.from.id;
@@ -371,7 +375,7 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
       return;
     }
 
-    if (dayjs().isBefore(dayjs(poll.data.expDate, "YYYY-MM-DDTHH:mm"))) {
+    if (dayjs().isBefore(dayjs(poll.data.expDate))) {
       const voteResponse = await axios.post(
         `${config.backendUrl}/tgPoll/vote`,
         {
@@ -414,7 +418,7 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
 
     newPollText = question + newPollText.join(" ");
 
-    if (dayjs().isAfter(dayjs(poll.data.expDate, "YYYY-MM-DDTHH:mm"))) {
+    if (dayjs().isAfter(dayjs(poll.data.expDate))) {
       // Delete buttons
       Bot.Client.editMessageText(
         ctx.update.callback_query.message.chat.id,

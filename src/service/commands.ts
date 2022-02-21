@@ -234,7 +234,15 @@ const startPoll = async (ctx: any): Promise<void> => {
     const poll = pollStorage.getPoll(pollId);
     const chatId = pollId.split(";").pop().split(":")[0];
 
-    const buttons: { text: string; callback_data: string }[] = [];
+    const voteButtonRow: { text: string; callback_data: string }[] = [];
+    const listVotersButton = {
+      text: "List Voters",
+      callback_data: `${pollId};ListVoters`
+    };
+    const updateResultButton = {
+      text: "Update Result",
+      callback_data: `${pollId};UpdateResult`
+    };
 
     let pollText = `${poll.question}\n`;
 
@@ -244,17 +252,17 @@ const startPoll = async (ctx: any): Promise<void> => {
         text: option,
         callback_data: `${option};${pollId}`
       };
-      buttons.push(button);
+      voteButtonRow.push(button);
     });
 
     const duration = poll.date.split(":");
 
-    const startDate = dayjs().format("YYYY-MM-DDTHH:mm");
+    const startDate = dayjs().toISOString();
     const expDate = dayjs()
       .add(parseInt(duration[0], 10), "day")
       .add(parseInt(duration[1], 10), "hour")
       .add(parseInt(duration[2], 10), "minute")
-      .format("YYYY-MM-DDTHH:mm");
+      .toISOString();
 
     const res = await axios.post(
       `${config.backendUrl}/tgPoll`,
@@ -268,11 +276,15 @@ const startPoll = async (ctx: any): Promise<void> => {
       { timeout: 150000 }
     );
 
-    const voteButtons = { reply_markup: { inline_keyboard: [buttons] } };
+    const inlineKeyboard = {
+      reply_markup: {
+        inline_keyboard: [voteButtonRow, [listVotersButton, updateResultButton]]
+      }
+    };
 
     pollStorage.deleteMemory(ctx.message.from.id);
 
-    await Bot.Client.sendMessage(chatId, pollText, voteButtons);
+    await Bot.Client.sendMessage(chatId, pollText, inlineKeyboard);
     logAxiosResponse(res);
   } catch (err) {
     pollStorage.deleteMemory(ctx.message.from.id);
