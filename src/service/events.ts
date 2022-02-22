@@ -15,8 +15,9 @@ import {
 } from "./common";
 import config from "../config";
 import logger from "../utils/logger";
-import { logAxiosResponse } from "../utils/utils";
+import { logAxiosResponse, updatePollText } from "../utils/utils";
 import pollStorage from "./pollStorage";
+import { Poll } from "./types";
 
 const onMessage = async (ctx: any): Promise<void> => {
   if (
@@ -355,70 +356,58 @@ const onMyChatMemberUpdate = async (ctx: any): Promise<void> => {
 const onCallbackQuery = async (ctx: any): Promise<void> => {
   try {
     const data: string[] = ctx.update.callback_query.data.split(";");
-
-    // if(data[data.length - 1] === "ListVoters"){
-    // }
-
-    const pollId: string = data.pop();
-    const voterOption = data.join(";");
+    const pollText = ctx.update.callback_query.message.text;
     const { reply_markup } = ctx.update.callback_query.message;
     const platformUserId = ctx.update.callback_query.from.id;
-    let allVotes = 0;
+    let newPollText: string;
+    let poll: Poll;
 
-    const poll = await axios.get(`${config.backendUrl}/tgPoll/${pollId}`);
-    const { question } = poll.data;
-    const pollText = ctx.update.callback_query.message.text;
-    let newPollText = pollText.replace(question, "").split(" ");
-
-    logAxiosResponse(poll);
-    if (poll.data.length === 0) {
-      return;
-    }
-
-    if (dayjs().isBefore(dayjs(poll.data.expDate))) {
-      const voteResponse = await axios.post(
-        `${config.backendUrl}/tgPoll/vote`,
-        {
-          pollId,
-          platformUserId,
-          option: voterOption
-        }
+    if (data.pop() === "UpdateResult") {
+      const [pollId] = data;
+      const pollResponse = await axios.get(
+        `${config.backendUrl}/poll/${pollId}`
       );
-      logAxiosResponse(voteResponse);
+
+      logAxiosResponse(pollResponse);
+      if (pollResponse.data.length === 0) {
+        return;
+      }
+
+      poll = pollResponse.data;
+      newPollText = await updatePollText(pollText, poll);
+    } else {
+      const pollId: string = data.pop();
+      const voterOption = data.join(";");
+      const pollResponse = await axios.get(
+        `${config.backendUrl}/poll/${pollId}`
+      );
+
+      logAxiosResponse(pollResponse);
+      if (pollResponse.data.length === 0) {
+        return;
+      }
+
+      poll = pollResponse.data;
+
+      if (dayjs().isBefore(dayjs(poll.expDate))) {
+        const voteResponse = await axios.post(
+          `${config.backendUrl}/poll/vote`,
+          {
+            pollId,
+            platformUserId,
+            option: voterOption
+          }
+        );
+        logAxiosResponse(voteResponse);
+      }
+      newPollText = await updatePollText(pollText, poll);
     }
 
-    const pollResult = await axios.get(
-      `${config.backendUrl}/tgPoll/result/${pollId}`
-    );
-
-    logAxiosResponse(pollResult);
-    if (pollResult.data.length === 0) {
+    if (newPollText === pollText) {
       return;
     }
 
-    poll.data.options.forEach((option: string) => {
-      allVotes += pollResult.data[option];
-    });
-
-    let j: number = 0;
-    for (let i = 0; i < newPollText.length; i += 1) {
-      if (newPollText[i] === `\n-${poll.data.options[j]}:`) {
-        if (pollResult.data[poll.data.options[j]] > 0) {
-          const persentage = (
-            (pollResult.data[poll.data.options[j]] / allVotes) *
-            100
-          ).toFixed(2);
-          newPollText[i + 1] = `${persentage}%`;
-        } else {
-          newPollText[i + 1] = `0%`;
-        }
-        j += 1;
-      }
-    }
-
-    newPollText = question + newPollText.join(" ");
-
-    if (dayjs().isAfter(dayjs(poll.data.expDate))) {
+    if (dayjs().isAfter(dayjs(poll.expDate))) {
       // Delete buttons
       Bot.Client.editMessageText(
         ctx.update.callback_query.message.chat.id,
@@ -426,10 +415,6 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
         undefined,
         newPollText
       );
-      return;
-    }
-
-    if (newPollText === pollText) {
       return;
     }
 

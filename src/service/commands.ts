@@ -7,7 +7,7 @@ import Bot from "../Bot";
 import { fetchCommunitiesOfUser } from "./common";
 import config from "../config";
 import logger from "../utils/logger";
-import { logAxiosResponse } from "../utils/utils";
+import { extractBackendErrorMessage, logAxiosResponse } from "../utils/utils";
 import pollStorage from "./pollStorage";
 
 const helpCommand = (ctx: any): void => {
@@ -175,41 +175,41 @@ const addCommand = async (
 const newPoll = async (ctx: any): Promise<void> => {
   try {
     const memberStatus = (
-      await Bot.Client.getChatMember(
-        ctx.message.chat.id,
-        Number(ctx.message.from.id)
-      )
+      await Bot.Client.getChatMember(ctx.message.chat.id, ctx.message.from.id)
     ).status;
+
+    if (ctx.message.chat.type !== "supergroup") {
+      ctx.reply("Please use this command in a guild.");
+      return;
+    }
+
     if (!(memberStatus === "creator" || memberStatus === "administrator")) {
       ctx.reply("You are not an admin.");
       return;
     }
-    if (ctx.message.chat.type !== "supergroup") {
-      ctx.reply("Please use this command in a guild.");
-    } else {
-      const userStep = pollStorage.getUserStep(ctx.message.from.id);
-      if (userStep) {
-        pollStorage.deleteMemory(ctx.message.from.id);
-      }
 
-      await Bot.Client.sendMessage(
-        ctx.message.from.id,
-        "Let's start creating your poll. You can use /reset or /cancel to restart or stop the process any time."
-      );
-
-      await Bot.Client.sendMessage(
-        ctx.message.from.id,
-        "First, send me the question of your poll.",
-        {
-          reply_markup: { force_reply: true }
-        }
-      );
-      pollStorage.initPoll(
-        ctx.message.from.id,
-        `${ctx.chat.id}:${ctx.message.message_id}`
-      );
-      pollStorage.setUserStep(ctx.message.from.id, 1);
+    const userStep = pollStorage.getUserStep(ctx.message.from.id);
+    if (userStep) {
+      pollStorage.deleteMemory(ctx.message.from.id);
     }
+
+    await Bot.Client.sendMessage(
+      ctx.message.from.id,
+      "Let's start creating your poll. You can use /reset or /cancel to restart or stop the process any time."
+    );
+
+    await Bot.Client.sendMessage(
+      ctx.message.from.id,
+      "First, send me the question of your poll.",
+      {
+        reply_markup: { force_reply: true }
+      }
+    );
+    pollStorage.initPoll(
+      ctx.message.from.id,
+      `${ctx.chat.id}:${ctx.message.message_id}`
+    );
+    pollStorage.setUserStep(ctx.message.from.id, 1);
   } catch (err) {
     logger.error(err);
   }
@@ -262,6 +262,7 @@ const startPoll = async (ctx: any): Promise<void> => {
 
     const duration = poll.date.split(":");
 
+    // for testing
     logger.verbose(`duration: ${duration}`);
 
     const startDate = dayjs().toISOString();
@@ -271,13 +272,14 @@ const startPoll = async (ctx: any): Promise<void> => {
       .add(parseInt(duration[2], 10), "minute")
       .toISOString();
 
+    // for testing
     logger.verbose(`startDate: ${startDate}`);
     logger.verbose(`expDate: ${expDate}`);
 
     const res = await axios.post(
-      `${config.backendUrl}/tgPoll`,
+      `${config.backendUrl}/poll`,
       {
-        pollId,
+        id: pollId,
         question: poll.question,
         startDate,
         expDate,
@@ -303,12 +305,10 @@ const startPoll = async (ctx: any): Promise<void> => {
       ctx.message.from.id,
       "Something went wrong. Please try again or contact us."
     );
-    /*
-    const rerrorMessage = extractBackendErrorMessage(err);
-    if (rerrorMessage === "Poll can't be created for this guild.") {
-      await Bot.Client.sendMessage(ctx.message.from.id, rerrorMessage);
+    const errorMessage = extractBackendErrorMessage(err);
+    if (errorMessage === "Poll can't be created for this guild.") {
+      await Bot.Client.sendMessage(ctx.message.from.id, errorMessage);
     }
-    */
     logger.error(err);
   }
 };
