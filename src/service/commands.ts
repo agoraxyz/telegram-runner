@@ -270,7 +270,7 @@ const startPoll = async (ctx: any): Promise<void> => {
       .add(parseInt(duration[0], 10), "day")
       .add(parseInt(duration[1], 10), "hour")
       .add(parseInt(duration[2], 10), "minute")
-      .format("YYYY-MM-DD HH:mm:ss.000");
+      .toISOString();
 
     // for testing
     logger.verbose(`startDate: ${startDate}`);
