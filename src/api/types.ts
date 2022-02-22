@@ -24,17 +24,8 @@ type LevelInfo = {
 };
 
 type ErrorResult = {
-  errors: { msg: string; value: string[] }[];
+  errors: { msg: string }[];
 };
-
-class ActionError extends Error {
-  ids: string[];
-
-  constructor(message: string, ids: string[]) {
-    super(message);
-    this.ids = ids;
-  }
-}
 
 type CreateGroupParam = {
   title: string;
@@ -51,7 +42,6 @@ export {
   CommunityResult,
   LevelInfo,
   ErrorResult,
-  ActionError,
   CreateGroupParam,
   IsInResult
 };

@@ -1,5 +1,5 @@
 import { AxiosResponse } from "axios";
-import { ActionError, ErrorResult } from "../api/types";
+import { ErrorResult } from "../api/types";
 import logger from "./logger";
 
 const UnixTime = (date: Date): number =>
@@ -7,25 +7,20 @@ const UnixTime = (date: Date): number =>
 
 const getErrorResult = (error: any): ErrorResult => {
   let errorMsg: string;
-  let ids: string[];
 
-  if (error instanceof ActionError) {
+  if (error instanceof Error) {
     errorMsg = error.message;
-    ids = error.ids;
   } else if (error?.response?.description) {
     errorMsg = error.response.description;
-    ids = [];
   } else {
     logger.error(error);
     errorMsg = "unknown error";
-    ids = [];
   }
 
   return {
     errors: [
       {
-        msg: errorMsg,
-        value: ids
+        msg: errorMsg
       }
     ]
   };
