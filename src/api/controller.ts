@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { validationResult } from "express-validator";
-import { getGroupName, isIn, isMember, manageGroups } from "./actions";
+import { getGroupName, getUser, isIn, isMember, manageGroups } from "./actions";
 import { CreateGroupParam, IsMemberParam, ManageGroupsParam } from "./types";
 import { getErrorResult } from "../utils/utils";
 import logger from "../utils/logger";
@@ -115,6 +115,22 @@ const controller = {
 
     try {
       const result = await getGroupName(+groupId);
+      res.status(200).json(result);
+    } catch (err) {
+      const errorMsg = getErrorResult(err);
+      res.status(400).json(errorMsg);
+    }
+  },
+
+  getUser: async (req: Request, res: Response): Promise<void> => {
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+      res.status(400).json({ errors: errors.array() });
+    }
+    try {
+      const { platformUserId } = req.params;
+      const result = await getUser(+platformUserId);
       res.status(200).json(result);
     } catch (err) {
       const errorMsg = getErrorResult(err);
