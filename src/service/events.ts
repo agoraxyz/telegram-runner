@@ -362,7 +362,7 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
     let newPollText: string;
     let poll: Poll;
 
-    if (data.pop() === "ListVoters") {
+    if (data[data.length - 1] === "ListVoters") {
       const [pollId] = data;
       let responseText: string = "These users voted for the given options:";
       const pollResponse = await axios.get(
@@ -410,7 +410,7 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
       return;
     }
 
-    if (data.pop() === "UpdateResult") {
+    if (data[data.length - 1] === "UpdateResult") {
       const [pollId] = data;
       const pollResponse = await axios.get(
         `${config.backendUrl}/poll/voters/${pollId}`
