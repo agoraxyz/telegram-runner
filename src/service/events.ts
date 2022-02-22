@@ -393,7 +393,6 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
 
       await Promise.all(
         poll.options.map(async (option) => {
-          responseText = responseText.concat(`\n${option}:`);
           const votes = votesByOption[option];
           await Promise.all(
             votes.map(async (vote) => {
@@ -403,7 +402,7 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
               );
               const username = ChatMember.user.first_name;
               responseText = responseText.concat(
-                ` (${username}=>${vote.balance})`
+                ` ${username}=>[${option}:${vote.balance}]`
               );
             })
           );
