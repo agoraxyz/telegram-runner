@@ -6,3 +6,8 @@ export type Poll = {
   options: string[];
   roleId: number;
 };
+
+export type UserVote = {
+  tgId: string;
+  balance: number;
+};
