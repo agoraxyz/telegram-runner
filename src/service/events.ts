@@ -391,21 +391,24 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
         [k: string]: UserVote[];
       } = votersResponse.data;
 
-      poll.options.forEach((option) => {
-        responseText = responseText.concat(`\n${option}:`);
-        const votes = votesByOption[option];
-        votes.forEach((vote) => {
-          Bot.Client.getChatMember(
-            ctx.update.callback_query.message.chat.id,
-            parseInt(vote.tgId, 10)
-          ).then((ChatMember) => {
-            const username = ChatMember.user.first_name;
-            responseText = responseText.concat(
-              ` (${username}=>${vote.balance})`
-            );
-          });
-        });
-      });
+      await Promise.all(
+        poll.options.map(async (option) => {
+          responseText = responseText.concat(`\n${option}:`);
+          const votes = votesByOption[option];
+          await Promise.all(
+            votes.map(async (vote) => {
+              const ChatMember = await Bot.Client.getChatMember(
+                ctx.update.callback_query.message.chat.id,
+                parseInt(vote.tgId, 10)
+              );
+              const username = ChatMember.user.first_name;
+              responseText = responseText.concat(
+                ` (${username}=>${vote.balance})`
+              );
+            })
+          );
+        })
+      );
 
       await Bot.Client.sendMessage(
         ctx.update.callback_query.message.chat.id,
