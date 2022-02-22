@@ -265,12 +265,12 @@ const startPoll = async (ctx: any): Promise<void> => {
     // for testing
     logger.verbose(`duration: ${duration}`);
 
-    const startDate = dayjs().toISOString();
+    const startDate = dayjs().format("YYYY-MM-DD HH:mm");
     const expDate = dayjs()
       .add(parseInt(duration[0], 10), "day")
       .add(parseInt(duration[1], 10), "hour")
       .add(parseInt(duration[2], 10), "minute")
-      .toISOString();
+      .format("YYYY-MM-DD HH:mm");
 
     // for testing
     logger.verbose(`startDate: ${startDate}`);

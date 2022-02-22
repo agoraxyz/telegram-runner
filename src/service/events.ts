@@ -437,7 +437,7 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
 
       poll = pollResponse.data;
 
-      if (dayjs().isBefore(dayjs(poll.expDate))) {
+      if (dayjs().isBefore(dayjs(poll.expDate, "YYYY-MM-DD HH:mm"))) {
         const voteResponse = await axios.post(
           `${config.backendUrl}/poll/vote`,
           {
@@ -455,7 +455,7 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
       return;
     }
 
-    if (dayjs().isAfter(dayjs(poll.expDate))) {
+    if (dayjs().isAfter(dayjs(poll.expDate, "YYYY-MM-DD HH:mm"))) {
       // Delete buttons
       Bot.Client.editMessageText(
         ctx.update.callback_query.message.chat.id,
