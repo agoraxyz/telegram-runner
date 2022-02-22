@@ -367,14 +367,16 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
       // for testing
       logger.verbose(`ListVoters ${pollId}`);
       let responseText: string = "These users voted for the given options:";
+
       const pollResponse = await axios.get(
-        `${config.backendUrl}/poll/voters/${pollId}`
+        `${config.backendUrl}/poll/${pollId}`
       );
       logAxiosResponse(pollResponse);
 
       const votersResponse = await axios.get(
-        `${config.backendUrl}/poll/${pollId}`
+        `${config.backendUrl}/poll/voters/${pollId}`
       );
+
       logAxiosResponse(votersResponse);
 
       if (pollResponse.data.length === 0) {
@@ -417,7 +419,7 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
       // for testing
       logger.verbose(`UpdateResult ${pollId}`);
       const pollResponse = await axios.get(
-        `${config.backendUrl}/poll/voters/${pollId}`
+        `${config.backendUrl}/poll/${pollId}`
       );
 
       logAxiosResponse(pollResponse);
