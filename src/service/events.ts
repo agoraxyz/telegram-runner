@@ -363,7 +363,9 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
     let poll: Poll;
 
     if (data[data.length - 1] === "ListVoters") {
-      const [pollId] = data;
+      const pollId = data[0];
+      // for testing
+      logger.verbose(`ListVoters ${pollId}`);
       let responseText: string = "These users voted for the given options:";
       const pollResponse = await axios.get(
         `${config.backendUrl}/poll/voters/${pollId}`
@@ -411,7 +413,9 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
     }
 
     if (data[data.length - 1] === "UpdateResult") {
-      const [pollId] = data;
+      const pollId = data[0];
+      // for testing
+      logger.verbose(`UpdateResult ${pollId}`);
       const pollResponse = await axios.get(
         `${config.backendUrl}/poll/voters/${pollId}`
       );
@@ -425,6 +429,8 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
       newPollText = await updatePollText(pollText, poll);
     } else {
       const pollId: string = data.pop();
+      // for testing
+      logger.verbose(`Vote ${pollId}`);
       const voterOption = data.join(";");
       const pollResponse = await axios.get(
         `${config.backendUrl}/poll/${pollId}`
