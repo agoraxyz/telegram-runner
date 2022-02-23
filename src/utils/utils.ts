@@ -128,11 +128,13 @@ const createVoteListText = async (ctx: any, poll: Poll): Promise<string> => {
 
           if (!ChatMember) {
             optionVotes[option].push(
-              `Unknown_User-[${option}:${vote.balance}]`
+              `Unknown_User-[${option}:${vote.balance}]\n`
             );
           } else {
             const username = ChatMember.user.first_name;
-            optionVotes[option].push(`${username}-[${option}:${vote.balance}]`);
+            optionVotes[option].push(
+              `${username}-[${option}:${vote.balance}]\n`
+            );
           }
         })
       );
@@ -149,7 +151,7 @@ const createVoteListText = async (ctx: any, poll: Poll): Promise<string> => {
     } else {
       pollText = pollText.concat(`0%\n`);
     }
-    pollText = pollText.concat(optionVotes[option].join("\n"));
+    pollText = pollText.concat(optionVotes[option].join(""));
   });
 
   return pollText;
