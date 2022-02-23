@@ -252,7 +252,7 @@ const startPoll = async (ctx: any): Promise<void> => {
     let pollText = `${poll.question}\n`;
 
     poll.options.forEach((option) => {
-      pollText = `${pollText}▫️ ${option}\n 0% \n`;
+      pollText = `${pollText}▫️${option}\n 0% \n`;
       const button = [
         {
           text: option,

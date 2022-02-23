@@ -56,7 +56,7 @@ const updatePollText = async (
 
   logAxiosResponse(pollResult);
   if (pollResult.data.length === 0) {
-    return;
+    throw new Error("Poll query failed for counting result.");
   }
 
   poll.options.forEach((option: string) => {
@@ -65,7 +65,7 @@ const updatePollText = async (
 
   let j: number = 0;
   for (let i = 0; i < newPollText.length; i += 1) {
-    if (newPollText[i] === `\n▫️ ${poll.options[j]}\n`) {
+    if (newPollText[i] === `\n▫️${poll.options[j]}\n`) {
       if (pollResult.data[poll.options[j]] > 0) {
         const persentage = (
           (pollResult.data[poll.options[j]] / allVotes) *
