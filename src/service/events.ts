@@ -399,11 +399,18 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
               const ChatMember = await Bot.Client.getChatMember(
                 ctx.update.callback_query.message.chat.id,
                 parseInt(vote.tgId, 10)
-              );
-              const username = ChatMember.user.first_name;
-              responseText = responseText.concat(
-                ` ${username}=>[${option}:${vote.balance}]`
-              );
+              ).catch(() => undefined);
+
+              if (!ChatMember) {
+                responseText = responseText.concat(
+                  ` Unknown_User=>[${option}:${vote.balance}]`
+                );
+              } else {
+                const username = ChatMember.user.first_name;
+                responseText = responseText.concat(
+                  ` ${username}=>[${option}:${vote.balance}]`
+                );
+              }
             })
           );
         })
