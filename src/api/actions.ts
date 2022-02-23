@@ -1,8 +1,10 @@
 import { Markup } from "telegraf";
+import axios from "axios";
 import { getGroupName, kickUser } from "../service/common";
 import Bot from "../Bot";
 import { IsInResult, ManageGroupsParam } from "./types";
 import logger from "../utils/logger";
+import config from "../config";
 
 const isMember = async (
   groupId: string,
@@ -164,4 +166,24 @@ const isIn = async (groupId: number): Promise<IsInResult> => {
   return { ok: true };
 };
 
-export { manageGroups, generateInvite, getGroupName, isMember, isIn };
+const getUser = async (platformUserId: number) => {
+  const chat = await Bot.Client.getChat(platformUserId);
+  const fileInfo = await axios.get(
+    `https://api.telegram.org/bot${config.telegramToken}/getFile?file_id=${chat.photo.small_file_id}`
+  );
+
+  if (!fileInfo.data.ok) {
+    throw Error("cannot fetch file info");
+  }
+
+  const blob = await axios.get(
+    `https://api.telegram.org/file/bot${config.telegramToken}/${fileInfo.data.result.file_path}`
+  );
+
+  return {
+    username: (chat as any).username,
+    avatar: blob.data
+  };
+};
+
+export { manageGroups, generateInvite, getGroupName, isMember, isIn, getUser };

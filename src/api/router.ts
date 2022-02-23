@@ -49,6 +49,12 @@ const createRouter = () => {
     controller.getGroupNameById
   );
 
+  router.get(
+    "/user/:platformUserId",
+    param("platformUserId").trim().isLength({ min: 1 }),
+    controller.getUser
+  );
+
   return router;
 };
 
