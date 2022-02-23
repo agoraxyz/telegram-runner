@@ -239,7 +239,7 @@ const startPoll = async (ctx: any): Promise<void> => {
     logger.verbose(`poll: ${JSON.stringify(poll)}`);
     logger.verbose(`pollId: ${pollId}`);
 
-    const voteButtonRow: { text: string; callback_data: string }[] = [];
+    const voteButtonRow: { text: string; callback_data: string }[][] = [];
     const listVotersButton = {
       text: "List Voters",
       callback_data: `${pollId};ListVoters`
@@ -252,13 +252,16 @@ const startPoll = async (ctx: any): Promise<void> => {
     let pollText = `${poll.question}\n`;
 
     poll.options.forEach((option) => {
-      pollText = `${pollText}-${option}: 0% \n`;
-      const button = {
-        text: option,
-        callback_data: `${option};${pollId}`
-      };
+      pollText = `${pollText}▫️ ${option}\n 0% \n`;
+      const button = [
+        {
+          text: option,
+          callback_data: `${option};${pollId}`
+        }
+      ];
       voteButtonRow.push(button);
     });
+    voteButtonRow.push([listVotersButton, updateResultButton]);
 
     const duration = poll.date.split(":");
 
@@ -292,7 +295,7 @@ const startPoll = async (ctx: any): Promise<void> => {
 
     const inlineKeyboard = {
       reply_markup: {
-        inline_keyboard: [voteButtonRow, [listVotersButton, updateResultButton]]
+        inline_keyboard: voteButtonRow
       }
     };
 
