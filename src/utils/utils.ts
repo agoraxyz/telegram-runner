@@ -49,7 +49,7 @@ const updatePollText = async (
   poll: Poll
 ): Promise<string> => {
   let allVotes = 0;
-  const newPollText = pollText.replace(poll.question, "").split(" ");
+  const newPollText = pollText.replace(poll.question, "").split("\n");
 
   const pollResult = await axios.get(
     `${config.backendUrl}/poll/result/${poll.id}`
@@ -66,20 +66,20 @@ const updatePollText = async (
 
   let j: number = 0;
   for (let i = 0; i < newPollText.length; i += 1) {
-    if (newPollText[i] === `\n▫️${poll.options[j]}\n`) {
+    if (newPollText[i] === `▫️${poll.options[j]}`) {
       if (pollResult.data[poll.options[j]] > 0) {
         const persentage = (
           (pollResult.data[poll.options[j]] / allVotes) *
           100
         ).toFixed(2);
-        newPollText[i + 1] = `${persentage}%`;
+        newPollText[i + 1] = ` ${persentage}%`;
       } else {
-        newPollText[i + 1] = `0%`;
+        newPollText[i + 1] = ` 0%`;
       }
       j += 1;
     }
   }
-  return poll.question + newPollText.join(" ");
+  return poll.question + newPollText.join("\n");
 };
 
 const createVoteListText = async (ctx: any, poll: Poll): Promise<string> => {
@@ -127,14 +127,10 @@ const createVoteListText = async (ctx: any, poll: Poll): Promise<string> => {
           ).catch(() => undefined);
 
           if (!ChatMember) {
-            optionVotes[option].push(
-              `Unknown_User-[${option}:${vote.balance}]\n`
-            );
+            optionVotes[option].push(`Unknown_User ${vote.balance}\n`);
           } else {
             const username = ChatMember.user.first_name;
-            optionVotes[option].push(
-              `${username}-[${option}:${vote.balance}]\n`
-            );
+            optionVotes[option].push(`${username} ${vote.balance}\n`);
           }
         })
       );
@@ -142,7 +138,7 @@ const createVoteListText = async (ctx: any, poll: Poll): Promise<string> => {
   );
 
   poll.options.forEach((option: string) => {
-    pollText = pollText.concat(`▫️ ${option} - `);
+    pollText = pollText.concat(`\n▫️ ${option} - `);
     if (pollResult.data[option] > 0) {
       const persentage = ((pollResult.data[option] / allVotes) * 100).toFixed(
         2
