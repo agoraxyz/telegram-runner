@@ -84,7 +84,7 @@ const updatePollText = async (
 
 const createVoteListText = async (ctx: any, poll: Poll): Promise<string> => {
   let allVotes: number = 0;
-  const pollText: string = "Results:\n";
+  let pollText: string = "Results:\n";
 
   const pollResult = await axios.get(
     `${config.backendUrl}/poll/result/${poll.id}`
@@ -140,16 +140,16 @@ const createVoteListText = async (ctx: any, poll: Poll): Promise<string> => {
   );
 
   poll.options.forEach((option: string) => {
-    pollText.concat(`▫️ ${option} - `);
+    pollText = pollText.concat(`▫️ ${option} - `);
     if (pollResult.data[option] > 0) {
       const persentage = ((pollResult.data[option] / allVotes) * 100).toFixed(
         2
       );
-      pollText.concat(`${persentage}%\n`);
+      pollText = pollText.concat(`${persentage}%\n`);
     } else {
-      pollText.concat(`0%\n`);
+      pollText = pollText.concat(`0%\n`);
     }
-    pollText.concat(optionVotes[option].join("\n"));
+    pollText = pollText.concat(optionVotes[option].join("\n"));
   });
 
   return pollText;
