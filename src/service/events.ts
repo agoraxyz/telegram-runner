@@ -468,10 +468,6 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
       newPollText = await updatePollText(pollText, poll);
     }
 
-    if (newPollText === pollText) {
-      return;
-    }
-
     if (dayjs().isAfter(dayjs(poll.expDate, "YYYY-MM-DD HH:mm"))) {
       // Delete buttons
       Bot.Client.editMessageText(
@@ -480,6 +476,10 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
         undefined,
         newPollText
       );
+      return;
+    }
+
+    if (newPollText === pollText) {
       return;
     }
 
