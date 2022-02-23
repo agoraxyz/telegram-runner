@@ -1,6 +1,6 @@
 /* eslint-disable consistent-return */
 import axios, { AxiosResponse } from "axios";
-import { ActionError, ErrorResult } from "../api/types";
+import { ErrorResult } from "../api/types";
 import Bot from "../Bot";
 import config from "../config";
 import { Poll, UserVote } from "../service/types";
