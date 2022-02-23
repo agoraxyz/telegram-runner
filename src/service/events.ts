@@ -15,9 +15,13 @@ import {
 } from "./common";
 import config from "../config";
 import logger from "../utils/logger";
-import { logAxiosResponse, updatePollText } from "../utils/utils";
+import {
+  createVoteListText,
+  logAxiosResponse,
+  updatePollText
+} from "../utils/utils";
 import pollStorage from "./pollStorage";
-import { Poll, UserVote } from "./types";
+import { Poll } from "./types";
 
 const onMessage = async (ctx: any): Promise<void> => {
   if (
@@ -366,58 +370,18 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
       const pollId = data[0];
       // for testing
       logger.verbose(`ListVoters ${pollId}`);
-      let responseText: string = "These users voted for the given options:";
 
       const pollResponse = await axios.get(
         `${config.backendUrl}/poll/${pollId}`
       );
       logAxiosResponse(pollResponse);
 
-      const votersResponse = await axios.get(
-        `${config.backendUrl}/poll/voters/${pollId}`
-      );
-
-      logAxiosResponse(votersResponse);
-
-      if (pollResponse.data.length === 0) {
-        return;
-      }
       poll = pollResponse.data;
 
-      if (votersResponse.data.length === 0) {
-        return;
-      }
-      const votesByOption: {
-        [k: string]: UserVote[];
-      } = votersResponse.data;
-
-      await Promise.all(
-        poll.options.map(async (option) => {
-          const votes = votesByOption[option];
-          await Promise.all(
-            votes.map(async (vote) => {
-              const ChatMember = await Bot.Client.getChatMember(
-                ctx.update.callback_query.message.chat.id,
-                parseInt(vote.tgId, 10)
-              ).catch(() => undefined);
-
-              if (!ChatMember) {
-                responseText = responseText.concat(
-                  ` Unknown_User=>[${option}:${vote.balance}]`
-                );
-              } else {
-                const username = ChatMember.user.first_name;
-                responseText = responseText.concat(
-                  ` ${username}=>[${option}:${vote.balance}]`
-                );
-              }
-            })
-          );
-        })
-      );
+      const responseText = await createVoteListText(ctx, poll);
 
       await Bot.Client.sendMessage(
-        ctx.update.callback_query.message.chat.id,
+        ctx.update.callback_query.from.id,
         responseText
       );
       return;
