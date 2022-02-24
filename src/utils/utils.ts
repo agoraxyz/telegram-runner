@@ -44,12 +44,9 @@ const logAxiosResponse = (res: AxiosResponse<any>) => {
 const extractBackendErrorMessage = (error: any) =>
   error.response?.data?.errors[0]?.msg;
 
-const updatePollText = async (
-  pollText: string,
-  poll: Poll
-): Promise<string> => {
+const updatePollText = async (poll: Poll): Promise<string> => {
   let allVotes = 0;
-  const newPollText = pollText.replace(poll.question, "").split("\n");
+  let newPollText = `${poll.question}\n\n`;
 
   const pollResult = await axios.get(
     `${config.backendUrl}/poll/result/${poll.id}`
@@ -64,22 +61,21 @@ const updatePollText = async (
     allVotes += pollResult.data[option];
   });
 
-  let j: number = 0;
-  for (let i = 0; i < newPollText.length; i += 1) {
-    if (newPollText[i] === `▫️${poll.options[j]}`) {
-      if (pollResult.data[poll.options[j]] > 0) {
-        const persentage = (
-          (pollResult.data[poll.options[j]] / allVotes) *
-          100
-        ).toFixed(2);
-        newPollText[i + 1] = ` ${persentage}%`;
-      } else {
-        newPollText[i + 1] = ` 0%`;
-      }
-      j += 1;
+  poll.options.forEach((option) => {
+    newPollText = newPollText.concat(`${option}\n`);
+    if (pollResult.data[option] > 0) {
+      const persentage = ((pollResult.data[option] / allVotes) * 100).toFixed(
+        2
+      );
+      newPollText = newPollText.concat(`▫️${persentage}%\n\n`);
+    } else {
+      newPollText = newPollText.concat(`▫️0%\n\n`);
     }
-  }
-  return poll.question + newPollText.join("\n");
+  });
+
+  newPollText = newPollText.concat(`0 person voted so far.`);
+
+  return newPollText;
 };
 
 const createVoteListText = async (ctx: any, poll: Poll): Promise<string> => {

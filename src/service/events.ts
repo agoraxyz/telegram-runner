@@ -401,7 +401,7 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
       }
 
       poll = pollResponse.data;
-      newPollText = await updatePollText(pollText, poll);
+      newPollText = await updatePollText(poll);
     } else {
       const pollId: string = data.pop();
       // for testing
@@ -429,7 +429,7 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
         );
         logAxiosResponse(voteResponse);
       }
-      newPollText = await updatePollText(pollText, poll);
+      newPollText = await updatePollText(poll);
     }
 
     if (dayjs().isAfter(dayjs(poll.expDate, "YYYY-MM-DD HH:mm"))) {
