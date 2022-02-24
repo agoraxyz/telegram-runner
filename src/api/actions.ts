@@ -177,12 +177,13 @@ const getUser = async (platformUserId: number) => {
   }
 
   const blob = await axios.get(
-    `https://api.telegram.org/file/bot${config.telegramToken}/${fileInfo.data.result.file_path}`
+    `https://api.telegram.org/file/bot${config.telegramToken}/${fileInfo.data.result.file_path}`,
+    { responseType: "arraybuffer" }
   );
 
   return {
     username: (chat as any).username,
-    avatar: blob.data
+    avatar: `data:image/jpeg;base64,${blob.data.toString("base64")}`
   };
 };
 
