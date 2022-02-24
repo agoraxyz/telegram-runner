@@ -79,7 +79,7 @@ const onMessage = async (ctx: any): Promise<void> => {
             return;
           }
           const regex =
-            /^([1-9][0-9]*|[0-9]):([0-1][0-9]|[0-9]|[2][0-4]):([0-5][0-9]|[0-9])$/;
+            /([1-9][0-9]*|[0-9]):([0-1][0-9]|[0-9]|[2][0-4]):([0-5][0-9]|[0-9])/;
           const found = replyMessage.match(regex);
           if (!found) {
             await Bot.Client.sendMessage(
