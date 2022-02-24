@@ -261,6 +261,7 @@ const startPoll = async (ctx: any): Promise<void> => {
       ];
       voteButtonRow.push(button);
     });
+    pollText = pollText.concat(`0 person voted so far.`);
     voteButtonRow.push([listVotersButton, updateResultButton]);
 
     const duration = poll.date.split(":");
@@ -325,6 +326,7 @@ const resetPoll = async (ctx: any): Promise<void> => {
       const pollId = pollStorage.getPollId(ctx.message.from.id);
       pollStorage.deleteMemory(ctx.message.from.id);
       pollStorage.initPoll(ctx.message.from.id, pollId);
+      pollStorage.setUserStep(ctx.message.from.id, 1);
       await Bot.Client.sendMessage(
         ctx.message.from.id,
         "The poll creation process has been reset. Now you can create a new poll. " +
