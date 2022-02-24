@@ -24,126 +24,78 @@ import pollStorage from "./pollStorage";
 import { Poll } from "./types";
 
 const onMessage = async (ctx: any): Promise<void> => {
-  if (
-    ctx.update.message.reply_to_message === undefined &&
-    ctx.update.message.chat.type === "private"
-  ) {
-    try {
-      await ctx.reply("I'm sorry, but I couldn't interpret your request.");
-      await ctx.replyWithMarkdown(
-        "You can find more information on the " +
-          "[Agora](https://agora.xyz/) website."
-      );
-    } catch (err) {
-      logger.error(err);
-    }
-  }
-  if (
-    ctx.update.message.chat.type === "private" &&
-    ctx.update.message.reply_to_message.from.username === config.botUsername
-  ) {
+  if (ctx.update.message.chat.type === "private") {
     try {
       const step = pollStorage.getUserStep(ctx.update.message.from.id);
-      const promptMessage = ctx.update.message.reply_to_message.text;
-      const replyMessage = ctx.update.message.text.trim();
-      if (promptMessage.includes("question")) {
-        if (step === 1) {
-          if (
-            replyMessage.includes("/done") ||
-            replyMessage.includes("/cancel") ||
-            replyMessage.includes("/reset")
-          ) {
-            return;
-          }
-          pollStorage.savePollQuestion(
-            ctx.update.message.from.id,
-            replyMessage
-          );
-          pollStorage.setUserStep(ctx.update.message.from.id, 2);
+      const messageText = ctx.update.message.text.trim();
+
+      if (step < 1) {
+        await ctx.reply("I'm sorry, but I couldn't interpret your request.");
+        await ctx.replyWithMarkdown(
+          "You can find more information on the " +
+            "[Agora](https://agora.xyz/) website."
+        );
+        return;
+      }
+
+      if (
+        messageText.includes("/done") ||
+        messageText.includes("/cancel") ||
+        messageText.includes("/reset")
+      ) {
+        return;
+      }
+
+      if (step === 1) {
+        pollStorage.savePollQuestion(ctx.update.message.from.id, messageText);
+        pollStorage.setUserStep(ctx.update.message.from.id, 2);
+        await Bot.Client.sendMessage(
+          ctx.update.message.from.id,
+          "Now send me the duration of your poll in DD:HH:mm format. " +
+            'For example if you want your poll to be active for 1.5 hours, you should send "0:1:30".'
+        );
+      } else if (step === 2) {
+        const regex =
+          /([1-9][0-9]*|[0-9]):([0-1][0-9]|[0-9]|[2][0-4]):([0-5][0-9]|[0-9])/;
+        const found = messageText.match(regex);
+        if (!found) {
           await Bot.Client.sendMessage(
             ctx.update.message.from.id,
-            "Now send me the duration of your poll in DD:HH:MM format. " +
-              'For example if you want your poll to be active for 1.5 hours, you should send "0:1:30".',
-            {
-              reply_markup: { force_reply: true }
-            }
+            "The message you sent me is not in the DD:HH:mm format. " +
+              "Please verify the contents of your message and send again."
           );
+          return;
         }
-      } else if (promptMessage.includes("DD:HH:MM")) {
-        if (step === 2) {
-          if (
-            replyMessage.includes("/done") ||
-            replyMessage.includes("/cancel") ||
-            replyMessage.includes("/reset")
-          ) {
-            return;
-          }
-          const regex =
-            /([1-9][0-9]*|[0-9]):([0-1][0-9]|[0-9]|[2][0-4]):([0-5][0-9]|[0-9])/;
-          const found = replyMessage.match(regex);
-          if (!found) {
-            await Bot.Client.sendMessage(
-              ctx.update.message.from.id,
-              "The message you sent me is not in the DD:HH:MM format. " +
-                "Please verify the contents of your message and send again.",
-              {
-                reply_markup: { force_reply: true }
-              }
-            );
-            return;
-          }
-          const date = found[0];
-          pollStorage.savePollExpDate(ctx.update.message.from.id, date);
-          pollStorage.setUserStep(ctx.update.message.from.id, 3);
+        const date = found[0];
+        pollStorage.savePollExpDate(ctx.update.message.from.id, date);
+        pollStorage.setUserStep(ctx.update.message.from.id, 3);
+        await Bot.Client.sendMessage(
+          ctx.update.message.from.id,
+          "Now send me the first option of your poll."
+        );
+      } else if (step >= 3) {
+        const optionSaved = pollStorage.savePollOption(
+          ctx.update.message.from.id,
+          messageText
+        );
+        if (!optionSaved) {
           await Bot.Client.sendMessage(
             ctx.update.message.from.id,
-            "Now send me the first option of your poll.",
-            {
-              reply_markup: { force_reply: true }
-            }
+            "This option is invalid please send me another."
           );
+          return;
         }
-      } else if (promptMessage.includes("option")) {
-        if (step >= 3) {
-          if (
-            replyMessage.includes("/done") ||
-            replyMessage.includes("/cancel") ||
-            replyMessage.includes("/reset")
-          ) {
-            return;
-          }
-          const optionSaved = pollStorage.savePollOption(
+        pollStorage.setUserStep(ctx.update.message.from.id, step + 1);
+        if (step === 3) {
+          await Bot.Client.sendMessage(
             ctx.update.message.from.id,
-            replyMessage
+            "Send me the second option of your poll."
           );
-          if (!optionSaved) {
-            await Bot.Client.sendMessage(
-              ctx.update.message.from.id,
-              "This option is invalid please send me another.",
-              {
-                reply_markup: { force_reply: true }
-              }
-            );
-            return;
-          }
-          pollStorage.setUserStep(ctx.update.message.from.id, step + 1);
-          if (step === 3) {
-            await Bot.Client.sendMessage(
-              ctx.update.message.from.id,
-              "Send me the second option of your poll.",
-              {
-                reply_markup: { force_reply: true }
-              }
-            );
-          } else {
-            await Bot.Client.sendMessage(
-              ctx.update.message.from.id,
-              "You can send me another option or use /done to start and publish your poll.",
-              {
-                reply_markup: { force_reply: true }
-              }
-            );
-          }
+        } else {
+          await Bot.Client.sendMessage(
+            ctx.update.message.from.id,
+            "You can send me another option or use /done to start and publish your poll."
+          );
         }
       }
     } catch (err) {

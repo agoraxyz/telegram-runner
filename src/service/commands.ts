@@ -195,16 +195,10 @@ const newPoll = async (ctx: any): Promise<void> => {
 
     await Bot.Client.sendMessage(
       ctx.message.from.id,
-      "Let's start creating your poll. You can use /reset or /cancel to restart or stop the process any time."
+      "Let's start creating your poll. You can use /reset or /cancel to restart or stop the process any time.\n\n" +
+        "First, send me the question of your poll."
     );
 
-    await Bot.Client.sendMessage(
-      ctx.message.from.id,
-      "First, send me the question of your poll.",
-      {
-        reply_markup: { force_reply: true }
-      }
-    );
     pollStorage.initPoll(
       ctx.message.from.id,
       `${ctx.chat.id}:${ctx.message.message_id}`
@@ -223,10 +217,7 @@ const startPoll = async (ctx: any): Promise<void> => {
     if (pollStorage.getUserStep(ctx.message.from.id) < 4) {
       Bot.Client.sendMessage(
         ctx.message.from.id,
-        "A poll must have more than one option. Please send me a second one.",
-        {
-          reply_markup: { force_reply: true }
-        }
+        "A poll must have more than one option. Please send me a second one."
       );
       return;
     }
@@ -330,14 +321,8 @@ const resetPoll = async (ctx: any): Promise<void> => {
       await Bot.Client.sendMessage(
         ctx.message.from.id,
         "The poll creation process has been reset. Now you can create a new poll. " +
-          "If you want to create a poll for a different group, use /cancel instead."
-      );
-      await Bot.Client.sendMessage(
-        ctx.message.from.id,
-        "First, send me the question of your poll.",
-        {
-          reply_markup: { force_reply: true }
-        }
+          "If you want to create a poll for a different group, use /cancel instead. \n\n" +
+          "First, send me the question of your poll."
       );
     }
   } catch (err) {
