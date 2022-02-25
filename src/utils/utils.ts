@@ -3,6 +3,7 @@ import axios, { AxiosResponse } from "axios";
 import { ActionError, ErrorResult } from "../api/types";
 import Bot from "../Bot";
 import config from "../config";
+import pollStorage from "../service/pollStorage";
 import { Poll, UserVote } from "../service/types";
 import logger from "./logger";
 
@@ -46,6 +47,7 @@ const extractBackendErrorMessage = (error: any) =>
 
 const updatePollText = async (poll: Poll): Promise<string> => {
   let allVotes = 0;
+  let numOfVoters = 0;
   let newPollText = `${poll.question}\n\n`;
 
   const pollResult = await axios.get(
@@ -73,7 +75,24 @@ const updatePollText = async (poll: Poll): Promise<string> => {
     }
   });
 
-  newPollText = newPollText.concat(`0 person voted so far.`);
+  const votersResponse = await axios.get(
+    `${config.backendUrl}/poll/voters/${poll.id}`
+  );
+  logAxiosResponse(votersResponse);
+
+  if (votersResponse.data.length === 0) {
+    throw new Error("Failed to query user votes.");
+  }
+
+  const votesByOption: {
+    [k: string]: UserVote[];
+  } = votersResponse.data;
+
+  poll.options.forEach((option: string) => {
+    numOfVoters += votesByOption[option].length;
+  });
+
+  newPollText = newPollText.concat(`👥${numOfVoters} person voted so far.`);
 
   return newPollText;
 };
@@ -149,11 +168,56 @@ const createVoteListText = async (ctx: any, poll: Poll): Promise<string> => {
   return pollText;
 };
 
+const pollBildResponse = async (userId: string): Promise<boolean> => {
+  switch (pollStorage.getUserStep(userId)) {
+    case undefined:
+      await Bot.Client.sendMessage(
+        userId,
+        "Please use the /poll command in a guild."
+      );
+      return true;
+    case 0:
+      await Bot.Client.sendMessage(
+        userId,
+        "Please use the /poll command in a guild."
+      );
+      return true;
+    case 1:
+      await Bot.Client.sendMessage(
+        userId,
+        "A poll must have a question. Please send me the question of your poll."
+      );
+      return true;
+    case 2:
+      await Bot.Client.sendMessage(
+        userId,
+        "A poll must have a duration. Please send me the duration of your poll in DD:HH:mm format."
+      );
+      return true;
+    case 3:
+      await Bot.Client.sendMessage(
+        userId,
+        "A poll must have options. Please send me the first one."
+      );
+      return true;
+    case 4:
+      await Bot.Client.sendMessage(
+        userId,
+        "A poll must have more than one option. Please send me a second one."
+      );
+      return true;
+    default:
+      break;
+  }
+  return false;
+};
+
 export {
   UnixTime,
   getErrorResult,
   logAxiosResponse,
   extractBackendErrorMessage,
   updatePollText,
-  createVoteListText
+  createVoteListText,
+  pollBildResponse
 };

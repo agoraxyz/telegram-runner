@@ -1,11 +1,11 @@
-type Poll = {
+type StoragePoll = {
+  chatId: string;
   question: string;
   options: string[];
   date: string;
 };
 
-const polls: Map<string, Poll> = new Map();
-const pollOfUser: Map<string, string> = new Map();
+const pollOfUser: Map<string, StoragePoll> = new Map();
 const userStep: Map<string, number> = new Map();
 
 const setUserStep = (userId: string, step: number): void => {
@@ -14,53 +14,52 @@ const setUserStep = (userId: string, step: number): void => {
 
 const getUserStep = (userId: string): number => userStep.get(userId);
 
-const initPoll = (userId: string, pollId: string): void => {
-  pollOfUser.set(userId, pollId);
+const initPoll = (userId: string, chatId: string): void => {
+  const pollOptions: string[] = [];
+  pollOfUser.set(userId, {
+    chatId,
+    question: "",
+    options: pollOptions,
+    date: ""
+  });
 };
 
 const savePollQuestion = (userId: string, question: string): void => {
-  const pollOptions: string[] = [];
-  const pollId = pollOfUser.get(userId);
-  polls.set(pollId, { question, options: pollOptions, date: "" });
+  const poll = pollOfUser.get(userId);
+  poll.question = question;
+  pollOfUser.set(userId, poll);
 };
 
 const savePollOption = (userId: string, option: string): boolean => {
-  const pollId = pollOfUser.get(userId);
-  const poll = polls.get(pollId);
+  const poll = pollOfUser.get(userId);
   if (poll.options.includes(option)) {
     return false;
   }
   poll.options.push(option);
-  polls.set(pollId, poll);
+  pollOfUser.set(userId, poll);
   return true;
 };
 
 const savePollExpDate = (userId: string, date: string): void => {
-  const pollId = pollOfUser.get(userId);
-  const poll = polls.get(pollId);
+  const poll = pollOfUser.get(userId);
   poll.date = date;
-  polls.set(pollId, poll);
+  pollOfUser.set(userId, poll);
 };
 
-const getPollId = (userId: string) => pollOfUser.get(userId);
-
-const getPoll = (pollId: string) => polls.get(pollId);
+const getPoll = (userId: string) => pollOfUser.get(userId);
 
 const deleteMemory = (userId: string) => {
-  const pollId = pollOfUser.get(userId);
   userStep.set(userId, 0);
-  polls.delete(pollId);
   pollOfUser.delete(userId);
 };
 
 export default {
+  initPoll,
   setUserStep,
   getUserStep,
-  initPoll,
   savePollQuestion,
   savePollOption,
   savePollExpDate,
-  getPollId,
   getPoll,
   deleteMemory
 };

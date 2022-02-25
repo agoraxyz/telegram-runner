@@ -30,9 +30,9 @@ const onMessage = async (ctx: any): Promise<void> => {
       const messageText = ctx.update.message.text.trim();
 
       if (
-        messageText.includes("/done") ||
-        messageText.includes("/cancel") ||
-        messageText.includes("/reset")
+        messageText === "/done" ||
+        messageText === "/cancel" ||
+        messageText === "/reset"
       ) {
         return;
       }
@@ -76,18 +76,18 @@ const onMessage = async (ctx: any): Promise<void> => {
           );
           return;
         }
-        pollStorage.setUserStep(ctx.update.message.from.id, step + 1);
         if (step === 3) {
           await Bot.Client.sendMessage(
             ctx.update.message.from.id,
             "Send me the second option of your poll."
           );
-        } else {
+        } else if (step >= 4) {
           await Bot.Client.sendMessage(
             ctx.update.message.from.id,
             "You can send me another option or use /done to start and publish your poll."
           );
         }
+        pollStorage.setUserStep(ctx.update.message.from.id, step + 1);
       } else {
         await ctx.reply("I'm sorry, but I couldn't interpret your request.");
         await ctx.replyWithMarkdown(
@@ -309,14 +309,17 @@ const onMyChatMemberUpdate = async (ctx: any): Promise<void> => {
 const onCallbackQuery = async (ctx: any): Promise<void> => {
   try {
     const data: string[] = ctx.update.callback_query.data.split(";");
+    const action: string = data.pop();
     const pollText = ctx.update.callback_query.message.text;
-    const { reply_markup } = ctx.update.callback_query.message;
     const platformUserId = ctx.update.callback_query.from.id;
     let newPollText: string;
     let poll: Poll;
+    let chatId: string;
+    let pollMessageId: string;
 
-    if (data[data.length - 1] === "ListVoters") {
-      const pollId = data[0];
+    if (action === "ListVoters") {
+      const pollId = data.pop();
+      [chatId, pollMessageId] = data[0].split(":");
       // for testing
       logger.verbose(`ListVoters ${pollId}`);
 
@@ -336,8 +339,10 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
       return;
     }
 
-    if (data[data.length - 1] === "UpdateResult") {
-      const pollId = data[0];
+    if (action === "UpdateResult") {
+      const pollId = data.pop();
+      const { reply_markup } = ctx.update.callback_query.message;
+      [chatId, pollMessageId] = data[0].split(":");
       // for testing
       logger.verbose(`UpdateResult ${pollId}`);
       const pollResponse = await axios.get(
@@ -351,8 +356,19 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
 
       poll = pollResponse.data;
       newPollText = await updatePollText(poll);
-    } else {
-      const pollId: string = data.pop();
+
+      await Bot.Client.editMessageText(
+        ctx.update.callback_query.message.chat.id,
+        ctx.update.callback_query.message.message_id,
+        undefined,
+        newPollText,
+        { reply_markup }
+      ).catch(() => undefined);
+    } else if (action === "Vote") {
+      const pollId = data.pop();
+      chatId = ctx.update.callback_query.message.chat.id;
+      pollMessageId = ctx.update.callback_query.message.message_id;
+
       // for testing
       logger.verbose(`Vote ${pollId}`);
       const voterOption = data.join(";");
@@ -383,9 +399,9 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
 
     if (dayjs().isAfter(dayjs(poll.expDate, "YYYY-MM-DD HH:mm"))) {
       // Delete buttons
-      Bot.Client.editMessageText(
-        ctx.update.callback_query.message.chat.id,
-        ctx.update.callback_query.message.message_id,
+      await Bot.Client.editMessageText(
+        chatId,
+        parseInt(pollMessageId, 10),
         undefined,
         newPollText
       );
@@ -396,13 +412,30 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
       return;
     }
 
-    Bot.Client.editMessageText(
-      ctx.update.callback_query.message.chat.id,
-      ctx.update.callback_query.message.message_id,
+    const voteButtonRow: { text: string; callback_data: string }[][] = [];
+    poll.options.forEach((option) => {
+      const button = [
+        {
+          text: option,
+          callback_data: `${option};${poll.id};Vote`
+        }
+      ];
+      voteButtonRow.push(button);
+    });
+
+    const inlineKeyboard = {
+      reply_markup: {
+        inline_keyboard: voteButtonRow
+      }
+    };
+
+    await Bot.Client.editMessageText(
+      chatId,
+      parseInt(pollMessageId, 10),
       undefined,
       newPollText,
-      { reply_markup }
-    );
+      inlineKeyboard
+    ).catch(() => undefined);
   } catch (err) {
     logger.error(err);
   }

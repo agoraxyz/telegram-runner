@@ -1,5 +1,5 @@
 export type Poll = {
-  id: string;
+  id: number;
   question: string;
   startDate: Date;
   expDate: Date;
