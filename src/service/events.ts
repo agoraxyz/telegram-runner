@@ -29,15 +29,6 @@ const onMessage = async (ctx: any): Promise<void> => {
       const step = pollStorage.getUserStep(ctx.update.message.from.id);
       const messageText = ctx.update.message.text.trim();
 
-      if (step < 1) {
-        await ctx.reply("I'm sorry, but I couldn't interpret your request.");
-        await ctx.replyWithMarkdown(
-          "You can find more information on the " +
-            "[Agora](https://agora.xyz/) website."
-        );
-        return;
-      }
-
       if (
         messageText.includes("/done") ||
         messageText.includes("/cancel") ||
@@ -97,6 +88,12 @@ const onMessage = async (ctx: any): Promise<void> => {
             "You can send me another option or use /done to start and publish your poll."
           );
         }
+      } else {
+        await ctx.reply("I'm sorry, but I couldn't interpret your request.");
+        await ctx.replyWithMarkdown(
+          "You can find more information on the " +
+            "[Agora](https://agora.xyz/) website."
+        );
       }
     } catch (err) {
       logger.error(err);
