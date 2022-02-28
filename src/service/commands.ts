@@ -302,11 +302,26 @@ const startPoll = async (ctx: any): Promise<void> => {
       callback_data: `${message.chat.id}:${message.message_id};${storedPoll.id};UpdateResult`
     };
 
-    await Bot.Client.sendMessage(ctx.message.from.id, pollText, {
-      reply_markup: {
-        inline_keyboard: [[listVotersButton, updateResultButton]]
+    const adminMessage = await Bot.Client.sendMessage(
+      ctx.message.from.id,
+      pollText,
+      {
+        reply_markup: {
+          inline_keyboard: [[listVotersButton, updateResultButton]]
+        }
       }
-    });
+    );
+
+    const pollTextRes = await axios.post(
+      `${config.backendUrl}/poll/pollText`,
+      {
+        pollId: storedPoll.id,
+        adminTextId: `${ctx.message.from.id}:${adminMessage.message_id}`
+      },
+      { timeout: 150000 }
+    );
+
+    logAxiosResponse(pollTextRes);
 
     pollStorage.deleteMemory(ctx.message.from.id);
   } catch (err) {

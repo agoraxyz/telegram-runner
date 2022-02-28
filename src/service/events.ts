@@ -316,6 +316,8 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
     let poll: Poll;
     let chatId: string;
     let pollMessageId: string;
+    let adminId: string;
+    let adminMessageId: number;
 
     if (action === "ListVoters") {
       const pollId = data.pop();
@@ -341,8 +343,9 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
 
     if (action === "UpdateResult") {
       const pollId = data.pop();
-      const { reply_markup } = ctx.update.callback_query.message;
       [chatId, pollMessageId] = data[0].split(":");
+      adminId = ctx.update.callback_query.message.chat.id;
+      adminMessageId = ctx.update.callback_query.message.message_id;
       // for testing
       logger.verbose(`UpdateResult ${pollId}`);
       const pollResponse = await axios.get(
@@ -356,34 +359,6 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
 
       poll = pollResponse.data;
       newPollText = await updatePollText(poll);
-
-      if (dayjs().isAfter(dayjs.unix(poll.expDate))) {
-        // Delete update button
-        const listVotersButton = {
-          text: "List Voters",
-          callback_data: `${data[0]};${pollId};ListVoters`
-        };
-
-        await Bot.Client.editMessageText(
-          ctx.update.callback_query.message.chat.id,
-          ctx.update.callback_query.message.message_id,
-          undefined,
-          newPollText,
-          {
-            reply_markup: {
-              inline_keyboard: [[listVotersButton]]
-            }
-          }
-        );
-      } else {
-        await Bot.Client.editMessageText(
-          ctx.update.callback_query.message.chat.id,
-          ctx.update.callback_query.message.message_id,
-          undefined,
-          newPollText,
-          { reply_markup }
-        ).catch(() => undefined);
-      }
     } else if (action === "Vote") {
       const pollId = data.pop();
       chatId = ctx.update.callback_query.message.chat.id;
@@ -403,6 +378,19 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
 
       poll = pollResponse.data;
 
+      const pollTextResponse = await axios.get(
+        `${config.backendUrl}/poll/pollText/${pollId}`
+      );
+
+      logAxiosResponse(pollTextResponse);
+      if (pollTextResponse.data.length === 0) {
+        return;
+      }
+
+      const pollAdminText = pollTextResponse.data.adminTextId;
+
+      [adminId, adminMessageId] = pollAdminText.split(":");
+
       if (dayjs().isBefore(dayjs.unix(poll.expDate))) {
         const voteResponse = await axios.post(
           `${config.backendUrl}/poll/vote`,
@@ -419,6 +407,13 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
 
     if (dayjs().isAfter(dayjs.unix(poll.expDate))) {
       // Delete buttons
+      await Bot.Client.editMessageText(
+        adminId,
+        adminMessageId,
+        undefined,
+        newPollText
+      ).catch(() => undefined);
+
       await Bot.Client.editMessageText(
         chatId,
         parseInt(pollMessageId, 10),
@@ -449,12 +444,33 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
       }
     };
 
+    const listVotersButton = {
+      text: "List Voters",
+      callback_data: `${chatId}:${pollMessageId};${poll.id};ListVoters`
+    };
+    const updateResultButton = {
+      text: "Update Result",
+      callback_data: `${chatId}:${pollMessageId};${poll.id};UpdateResult`
+    };
+
     await Bot.Client.editMessageText(
       chatId,
       parseInt(pollMessageId, 10),
       undefined,
       newPollText,
       inlineKeyboard
+    ).catch(() => undefined);
+
+    await Bot.Client.editMessageText(
+      adminId,
+      adminMessageId,
+      undefined,
+      newPollText,
+      {
+        reply_markup: {
+          inline_keyboard: [[listVotersButton, updateResultButton]]
+        }
+      }
     ).catch(() => undefined);
   } catch (err) {
     logger.error(err);
