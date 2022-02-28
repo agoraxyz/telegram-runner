@@ -1,8 +1,8 @@
 export type Poll = {
   id: number;
   question: string;
-  startDate: Date;
-  expDate: Date;
+  startDate: number;
+  expDate: number;
   options: string[];
   roleId: number;
 };

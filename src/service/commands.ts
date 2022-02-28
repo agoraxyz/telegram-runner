@@ -216,7 +216,7 @@ const startPoll = async (ctx: any): Promise<void> => {
     if (ctx.message.chat.type !== "private") {
       return;
     }
-    if (pollBildResponse(ctx.message.from.id)) {
+    if (await pollBildResponse(ctx.message.from.id)) {
       return;
     }
     const poll = pollStorage.getPoll(ctx.message.from.id);
@@ -233,12 +233,12 @@ const startPoll = async (ctx: any): Promise<void> => {
     // for testing
     logger.verbose(`duration: ${duration}`);
 
-    const startDate = dayjs().format("YYYY-MM-DD HH:mm");
+    const startDate = dayjs().unix();
     const expDate = dayjs()
       .add(parseInt(duration[0], 10), "day")
       .add(parseInt(duration[1], 10), "hour")
       .add(parseInt(duration[2], 10), "minute")
-      .format("YYYY-MM-DD HH:mm");
+      .unix();
 
     // for testing
     logger.verbose(`startDate: ${startDate}`);
@@ -273,6 +273,13 @@ const startPoll = async (ctx: any): Promise<void> => {
       voteButtonRow.push(button);
     });
     pollText = pollText.concat(`👥 0 person voted so far.`);
+
+    pollText = pollText.concat(
+      `\n\nPoll ends on ${dayjs
+        .unix(expDate)
+        .utc()
+        .format("YYYY-MM-DD HH:mm UTC")}`
+    );
 
     const inlineKeyboard = {
       reply_markup: {

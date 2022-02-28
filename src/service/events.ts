@@ -357,13 +357,33 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
       poll = pollResponse.data;
       newPollText = await updatePollText(poll);
 
-      await Bot.Client.editMessageText(
-        ctx.update.callback_query.message.chat.id,
-        ctx.update.callback_query.message.message_id,
-        undefined,
-        newPollText,
-        { reply_markup }
-      ).catch(() => undefined);
+      if (dayjs().isAfter(dayjs.unix(poll.expDate))) {
+        // Delete update button
+        const listVotersButton = {
+          text: "List Voters",
+          callback_data: `${data[0]};${pollId};ListVoters`
+        };
+
+        await Bot.Client.editMessageText(
+          ctx.update.callback_query.message.chat.id,
+          ctx.update.callback_query.message.message_id,
+          undefined,
+          newPollText,
+          {
+            reply_markup: {
+              inline_keyboard: [[listVotersButton]]
+            }
+          }
+        );
+      } else {
+        await Bot.Client.editMessageText(
+          ctx.update.callback_query.message.chat.id,
+          ctx.update.callback_query.message.message_id,
+          undefined,
+          newPollText,
+          { reply_markup }
+        ).catch(() => undefined);
+      }
     } else if (action === "Vote") {
       const pollId = data.pop();
       chatId = ctx.update.callback_query.message.chat.id;
@@ -383,7 +403,7 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
 
       poll = pollResponse.data;
 
-      if (dayjs().isBefore(dayjs(poll.expDate, "YYYY-MM-DD HH:mm"))) {
+      if (dayjs().isBefore(dayjs.unix(poll.expDate))) {
         const voteResponse = await axios.post(
           `${config.backendUrl}/poll/vote`,
           {
@@ -397,14 +417,14 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
       newPollText = await updatePollText(poll);
     }
 
-    if (dayjs().isAfter(dayjs(poll.expDate, "YYYY-MM-DD HH:mm"))) {
+    if (dayjs().isAfter(dayjs.unix(poll.expDate))) {
       // Delete buttons
       await Bot.Client.editMessageText(
         chatId,
         parseInt(pollMessageId, 10),
         undefined,
         newPollText
-      );
+      ).catch(() => undefined);
       return;
     }
 

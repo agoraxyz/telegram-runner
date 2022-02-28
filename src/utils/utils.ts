@@ -1,11 +1,15 @@
 /* eslint-disable consistent-return */
 import axios, { AxiosResponse } from "axios";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
 import { ActionError, ErrorResult } from "../api/types";
 import Bot from "../Bot";
 import config from "../config";
 import pollStorage from "../service/pollStorage";
 import { Poll, UserVote } from "../service/types";
 import logger from "./logger";
+
+dayjs.extend(utc);
 
 const UnixTime = (date: Date): number =>
   Math.floor((date as unknown as number) / 1000);
@@ -94,6 +98,17 @@ const updatePollText = async (poll: Poll): Promise<string> => {
 
   newPollText = newPollText.concat(`👥${numOfVoters} person voted so far.`);
 
+  if (dayjs().isAfter(dayjs.unix(poll.expDate))) {
+    newPollText = newPollText.concat("\n\nPoll has already ended.");
+  } else {
+    newPollText = newPollText.concat(
+      `\n\nPoll ends on ${dayjs
+        .unix(poll.expDate)
+        .utc()
+        .format("YYYY-MM-DD HH:mm UTC")}`
+    );
+  }
+
   return newPollText;
 };
 
@@ -128,8 +143,6 @@ const createVoteListText = async (ctx: any, poll: Poll): Promise<string> => {
   const votesByOption: {
     [k: string]: UserVote[];
   } = votersResponse.data;
-
-  logAxiosResponse(votersResponse);
 
   await Promise.all(
     poll.options.map(async (option) => {
