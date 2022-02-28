@@ -2,7 +2,7 @@
 import axios, { AxiosResponse } from "axios";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
-import { ActionError, ErrorResult } from "../api/types";
+import { ErrorResult } from "../api/types";
 import Bot from "../Bot";
 import config from "../config";
 import pollStorage from "../service/pollStorage";
@@ -16,25 +16,20 @@ const UnixTime = (date: Date): number =>
 
 const getErrorResult = (error: any): ErrorResult => {
   let errorMsg: string;
-  let ids: string[];
 
-  if (error instanceof ActionError) {
+  if (error instanceof Error) {
     errorMsg = error.message;
-    ids = error.ids;
   } else if (error?.response?.description) {
     errorMsg = error.response.description;
-    ids = [];
   } else {
     logger.error(error);
     errorMsg = "unknown error";
-    ids = [];
   }
 
   return {
     errors: [
       {
-        msg: errorMsg,
-        value: ids
+        msg: errorMsg
       }
     ]
   };
