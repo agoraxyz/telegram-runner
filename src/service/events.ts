@@ -362,6 +362,9 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
       poll = pollResponse.data;
       newPollText = await updatePollText(poll);
     } else if (action === "Vote") {
+      const adminText = data.pop().split(":");
+      [adminId] = adminText;
+      adminMessageId = parseInt(adminText[1], 10);
       const pollId = data.pop();
       chatId = ctx.update.callback_query.message.chat.id;
       pollMessageId = ctx.update.callback_query.message.message_id;
@@ -379,19 +382,6 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
       }
 
       poll = pollResponse.data;
-
-      const pollTextResponse = await axios.get(
-        `${config.backendUrl}/poll/pollText/${pollId}`
-      );
-
-      logAxiosResponse(pollTextResponse);
-      if (pollTextResponse.data.length === 0) {
-        return;
-      }
-
-      const pollAdminText = pollTextResponse.data.adminTextId;
-
-      [adminId, adminMessageId] = pollAdminText.split(":");
 
       if (dayjs().isBefore(dayjs.unix(poll.expDate))) {
         const voteResponse = await axios.post(
@@ -434,7 +424,7 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
       const button = [
         {
           text: option,
-          callback_data: `${option};${poll.id};Vote`
+          callback_data: `${option};${poll.id};${adminId}:${adminMessageId};Vote`
         }
       ];
       voteButtonRow.push(button);

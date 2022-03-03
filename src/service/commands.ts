@@ -193,6 +193,24 @@ const newPoll = async (ctx: any): Promise<void> => {
       return;
     }
 
+    const ChatMember = await Bot.Client.getChatMember(
+      ctx.chat.id,
+      ctx.message.from.id
+    ).catch(() => undefined);
+
+    if (!ChatMember) {
+      ctx.reply("Check your private messages!");
+    } else {
+      const userName = ChatMember.user.username;
+      if (!userName) {
+        ctx.reply(
+          `@${ChatMember.user.first_name} check your private messages!`
+        );
+      } else {
+        ctx.reply(`${userName} check your private messages!`);
+      }
+    }
+
     const userStep = pollStorage.getUserStep(ctx.message.from.id);
     if (userStep) {
       pollStorage.deleteMemory(ctx.message.from.id);
@@ -262,12 +280,17 @@ const startPoll = async (ctx: any): Promise<void> => {
 
     let pollText = `${poll.question}\n\n`;
 
+    const adminMessage = await Bot.Client.sendMessage(
+      ctx.message.from.id,
+      pollText
+    );
+
     poll.options.forEach((option) => {
       pollText = `${pollText}${option}\n▫️0%\n\n`;
       const button = [
         {
           text: option,
-          callback_data: `${option};${storedPoll.id};Vote`
+          callback_data: `${option};${storedPoll.id};${ctx.message.from.id}:${adminMessage.message_id};Vote`
         }
       ];
       voteButtonRow.push(button);
@@ -302,8 +325,10 @@ const startPoll = async (ctx: any): Promise<void> => {
       callback_data: `${message.chat.id}:${message.message_id};${storedPoll.id};UpdateResult`
     };
 
-    const adminMessage = await Bot.Client.sendMessage(
+    await Bot.Client.editMessageText(
       ctx.message.from.id,
+      adminMessage.message_id,
+      undefined,
       pollText,
       {
         reply_markup: {
@@ -311,17 +336,6 @@ const startPoll = async (ctx: any): Promise<void> => {
         }
       }
     );
-
-    const pollTextRes = await axios.post(
-      `${config.backendUrl}/poll/pollText`,
-      {
-        pollId: storedPoll.id,
-        adminTextId: `${ctx.message.from.id}:${adminMessage.message_id}`
-      },
-      { timeout: 150000 }
-    );
-
-    logAxiosResponse(pollTextRes);
 
     pollStorage.deleteMemory(ctx.message.from.id);
   } catch (err) {
