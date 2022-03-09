@@ -37,15 +37,15 @@ const onMessage = async (ctx: any): Promise<void> => {
         return;
       }
 
-      if (step === 1) {
+      if (step === 2) {
         pollStorage.savePollQuestion(ctx.update.message.from.id, messageText);
-        pollStorage.setUserStep(ctx.update.message.from.id, 2);
+        pollStorage.setUserStep(ctx.update.message.from.id, 3);
         await Bot.Client.sendMessage(
           ctx.update.message.from.id,
           "Now send me the duration of your poll in DD:HH:mm format. " +
             'For example if you want your poll to be active for 1.5 hours, you should send "0:1:30".'
         );
-      } else if (step === 2) {
+      } else if (step === 3) {
         const regex =
           /([1-9][0-9]*|[0-9]):([0-1][0-9]|[0-9]|[2][0-4]):([0-5][0-9]|[0-9])/;
         const found = messageText.match(regex);
@@ -59,12 +59,12 @@ const onMessage = async (ctx: any): Promise<void> => {
         }
         const date = found[0];
         pollStorage.savePollExpDate(ctx.update.message.from.id, date);
-        pollStorage.setUserStep(ctx.update.message.from.id, 3);
+        pollStorage.setUserStep(ctx.update.message.from.id, 4);
         await Bot.Client.sendMessage(
           ctx.update.message.from.id,
           "Now send me the first option of your poll."
         );
-      } else if (step >= 3) {
+      } else if (step >= 4) {
         const optionSaved = pollStorage.savePollOption(
           ctx.update.message.from.id,
           messageText
@@ -76,12 +76,12 @@ const onMessage = async (ctx: any): Promise<void> => {
           );
           return;
         }
-        if (step === 3) {
+        if (step === 4) {
           await Bot.Client.sendMessage(
             ctx.update.message.from.id,
             "Send me the second option of your poll."
           );
-        } else if (step >= 4) {
+        } else if (step >= 5) {
           await Bot.Client.sendMessage(
             ctx.update.message.from.id,
             "You can send me another option or use /done to start and publish your poll."
@@ -320,6 +320,30 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
     let pollMessageId: string;
     let adminId: string;
     let adminMessageId: number;
+
+    if (action === "PickRequirement") {
+      const requrementId = data.pop();
+
+      pollStorage.saveReqId(
+        ctx.update.callback_query.message.chat.id,
+        requrementId
+      );
+
+      await Bot.Client.editMessageText(
+        ctx.update.callback_query.from.id,
+        ctx.update.callback_query.message.message_id,
+        undefined,
+        `Your choosen token is:\n\n${data[0]}`
+      ).catch(() => undefined);
+
+      pollStorage.setUserStep(ctx.update.callback_query.message.chat.id, 2);
+
+      await Bot.Client.sendMessage(
+        ctx.update.callback_query.message.chat.id,
+        "Now, send me the question of your poll."
+      );
+      return;
+    }
 
     if (action === "ListVoters") {
       const pollId = data.pop();

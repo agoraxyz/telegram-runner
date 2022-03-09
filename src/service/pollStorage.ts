@@ -1,4 +1,5 @@
 type StoragePoll = {
+  requirementId: string;
   chatId: string;
   question: string;
   options: string[];
@@ -17,11 +18,18 @@ const getUserStep = (userId: string): number => userStep.get(userId);
 const initPoll = (userId: string, chatId: string): void => {
   const pollOptions: string[] = [];
   pollOfUser.set(userId, {
+    requirementId: "",
     chatId,
     question: "",
     options: pollOptions,
     date: ""
   });
+};
+
+const saveReqId = (userId: string, requirementId: string): void => {
+  const poll = pollOfUser.get(userId);
+  poll.requirementId = requirementId;
+  pollOfUser.set(userId, poll);
 };
 
 const savePollQuestion = (userId: string, question: string): void => {
@@ -57,6 +65,7 @@ export default {
   initPoll,
   setUserStep,
   getUserStep,
+  saveReqId,
   savePollQuestion,
   savePollOption,
   savePollExpDate,

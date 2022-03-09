@@ -8,6 +8,7 @@ import { fetchCommunitiesOfUser } from "./common";
 import config from "../config";
 import logger from "../utils/logger";
 import {
+  sendPollTokenPicker,
   extractBackendErrorMessage,
   logAxiosResponse,
   pollBildResponse
@@ -193,6 +194,16 @@ const newPoll = async (ctx: any): Promise<void> => {
       return;
     }
 
+    await sendPollTokenPicker(ctx);
+
+    const userStep = pollStorage.getUserStep(ctx.message.from.id);
+    if (userStep) {
+      pollStorage.deleteMemory(ctx.message.from.id);
+    }
+
+    pollStorage.initPoll(ctx.message.from.id, ctx.chat.id.toString());
+    pollStorage.setUserStep(ctx.message.from.id, 1);
+
     const ChatMember = await Bot.Client.getChatMember(
       ctx.chat.id,
       ctx.message.from.id
@@ -203,27 +214,13 @@ const newPoll = async (ctx: any): Promise<void> => {
     } else {
       const userName = ChatMember.user.username;
       if (!userName) {
-        ctx.reply(
-          `@${ChatMember.user.first_name} check your private messages!`
+        ctx.replyWithMarkdown(
+          `[${ChatMember.user.first_name}](tg://user?id=${ctx.message.from.id}) check your private messages!`
         );
       } else {
-        ctx.reply(`${userName} check your private messages!`);
+        ctx.reply(`@${userName} check your private messages!`);
       }
     }
-
-    const userStep = pollStorage.getUserStep(ctx.message.from.id);
-    if (userStep) {
-      pollStorage.deleteMemory(ctx.message.from.id);
-    }
-
-    await Bot.Client.sendMessage(
-      ctx.message.from.id,
-      "Let's start creating your poll. You can use /reset or /cancel to restart or stop the process any time.\n\n" +
-        "First, send me the question of your poll."
-    );
-
-    pollStorage.initPoll(ctx.message.from.id, ctx.chat.id.toString());
-    pollStorage.setUserStep(ctx.message.from.id, 1);
   } catch (err) {
     logger.error(err);
   }
@@ -266,6 +263,7 @@ const startPoll = async (ctx: any): Promise<void> => {
       `${config.backendUrl}/poll`,
       {
         groupId: poll.chatId,
+        requirementId: poll.requirementId,
         question: poll.question,
         startDate,
         expDate,
@@ -362,12 +360,13 @@ const resetPoll = async (ctx: any): Promise<void> => {
       pollStorage.deleteMemory(ctx.message.from.id);
       pollStorage.initPoll(ctx.message.from.id, poll.chatId);
       pollStorage.setUserStep(ctx.message.from.id, 1);
+
       await Bot.Client.sendMessage(
         ctx.message.from.id,
-        "The poll creation process has been reset. Now you can create a new poll. " +
-          "If you want to create a poll for a different group, use /cancel instead. \n\n" +
-          "First, send me the question of your poll."
+        "The poll building process has been reset."
       );
+
+      await sendPollTokenPicker(ctx);
     }
   } catch (err) {
     logger.error(err);

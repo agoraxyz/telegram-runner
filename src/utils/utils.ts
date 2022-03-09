@@ -196,22 +196,28 @@ const pollBildResponse = async (userId: string): Promise<boolean> => {
     case 1:
       await Bot.Client.sendMessage(
         userId,
-        "A poll must have a question. Please send me the question of your poll."
+        "A poll must have a token as the base of the weighted vote."
       );
       return true;
     case 2:
       await Bot.Client.sendMessage(
         userId,
-        "A poll must have a duration. Please send me the duration of your poll in DD:HH:mm format."
+        "A poll must have a question. Please send me the question of your poll."
       );
       return true;
     case 3:
       await Bot.Client.sendMessage(
         userId,
-        "A poll must have options. Please send me the first one."
+        "A poll must have a duration. Please send me the duration of your poll in DD:HH:mm format."
       );
       return true;
     case 4:
+      await Bot.Client.sendMessage(
+        userId,
+        "A poll must have options. Please send me the first one."
+      );
+      return true;
+    case 5:
       await Bot.Client.sendMessage(
         userId,
         "A poll must have more than one option. Please send me a second one."
@@ -223,6 +229,62 @@ const pollBildResponse = async (userId: string): Promise<boolean> => {
   return false;
 };
 
+const sendPollTokenPicker = async (ctx: any): Promise<void> => {
+  const guildIdRes = await axios
+    .get(`${config.backendUrl}/guild/platformId/${ctx.message.chat.id}`)
+    .catch(() => undefined);
+
+  if (!guildIdRes) {
+    ctx.reply("Please use this command in a guild.");
+    return;
+  }
+
+  const guildRes = await axios
+    .get(`${config.backendUrl}/guild/${guildIdRes.data.id}`)
+    .catch(() => undefined);
+
+  if (!guildRes) {
+    ctx.reply("Something went wrong. Please try again or contact us.");
+    return;
+  }
+
+  const requirements = guildRes.data.roles[0].role.requirements.filter(
+    (requirement) => requirement.type === "ERC20"
+  );
+
+  if (requirements.length === 0) {
+    await Bot.Client.sendMessage(
+      ctx.message.from.id,
+      "Your guild has no requirement with an appropriate token standard." +
+        "Creating a weighted poll with the NFT or the 1155 standard is not supported."
+    );
+    return;
+  }
+
+  const tokenButtons: { text: string; callback_data: string }[][] = [];
+
+  requirements.forEach((requirement) => {
+    const button = [
+      {
+        text: `${requirement.name}-${requirement.chain}-${requirement.address}`,
+        callback_data: `${requirement.name}-${requirement.chain};${requirement.id};PickRequirement`
+      }
+    ];
+    tokenButtons.push(button);
+  });
+
+  await Bot.Client.sendMessage(
+    ctx.message.from.id,
+    "Let's start creating your poll. You can use /reset or /cancel to restart or stop the process any time.\n\n" +
+      "First, choose a token as the base of the weighted vote.",
+    {
+      reply_markup: {
+        inline_keyboard: tokenButtons
+      }
+    }
+  );
+};
+
 export {
   UnixTime,
   getErrorResult,
@@ -230,5 +292,6 @@ export {
   extractBackendErrorMessage,
   updatePollText,
   createVoteListText,
-  pollBildResponse
+  pollBildResponse,
+  sendPollTokenPicker
 };
