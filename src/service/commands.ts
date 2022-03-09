@@ -1,10 +1,11 @@
-import axios from "axios";
+import axios, { AxiosResponse } from "axios";
 import { Context, Markup, NarrowedContext } from "telegraf";
 import { InlineKeyboardButton, Message, Update } from "typegram";
 import dayjs from "dayjs";
 import { LevelInfo } from "../api/types";
 import Bot from "../Bot";
-import { fetchCommunitiesOfUser } from "./common";
+import { generateInvite } from "../api/actions";
+import { fetchCommunitiesOfUser, getGroupName } from "./common";
 import config from "../config";
 import logger from "../utils/logger";
 import {
@@ -18,8 +19,8 @@ import { Poll } from "./types";
 
 const helpCommand = (ctx: any): void => {
   const helpHeader =
-    "Hello there! My name is Medousa.\n" +
-    "I'm part of the [Agora](https://agora.xyz/) project and " +
+    "Hello there! I'm the Guild bot.\n" +
+    "I'm part of the [Guild](https://docs.guild.xyz/) project and " +
     "I am your personal assistant.\n" +
     "I will always let you know whether you can join a guild or " +
     "whether you were kicked from a guild.\n";
@@ -48,6 +49,94 @@ const helpCommand = (ctx: any): void => {
   ctx.replyWithMarkdown(`${helpHeader}\n${commandsList}\n${helpFooter}`, {
     disable_web_page_preview: true
   });
+};
+
+const onChatStart = async (
+  ctx: NarrowedContext<
+    Context,
+    {
+      message: Update.New & Update.NonChannel & Message.TextMessage;
+      update_id: number;
+    }
+  >
+): Promise<void> => {
+  const { message } = ctx;
+
+  if (message.chat.id > 0) {
+    if (new RegExp(/^\/start [a-z0-9]{64}$/).test(message.text)) {
+      const refId = message.text.split("/start ")[1];
+      const platformUserId = message.from.id;
+
+      try {
+        await ctx.reply(
+          "Thank you for joining, I'll send the invites as soon as possible."
+        );
+
+        let res: AxiosResponse;
+        logger.verbose(`onChatStart join - ${refId} ${platformUserId}`);
+        try {
+          res = await axios.post(
+            `${config.backendUrl}/user/getAccessibleGroupIds`,
+            {
+              refId,
+              platformUserId
+            }
+          );
+        } catch (error) {
+          if (error?.response?.data?.errors?.[0]?.msg === "deleted") {
+            ctx.reply(
+              "This invite link has expired. Please, start the joining process through the guild page again."
+            );
+            return;
+          }
+          logger.error(`${JSON.stringify(error)}`);
+          ctx.reply(`Something went wrong. (${new Date().toUTCString()})`);
+          return;
+        }
+        logAxiosResponse(res);
+
+        if (res.data.length === 0) {
+          ctx.reply(
+            "There aren't any groups of this guild that you have access to."
+          );
+          return;
+        }
+
+        const invites: { link: string; name: string }[] = [];
+
+        await Promise.all(
+          res.data.map(async (groupId: string) => {
+            const inviteLink = await generateInvite(groupId, platformUserId);
+
+            if (inviteLink !== undefined) {
+              invites.push({
+                link: inviteLink,
+                name: await getGroupName(+groupId)
+              });
+            }
+          })
+        );
+
+        logger.verbose(`inviteLink: ${invites}`);
+
+        if (invites.length) {
+          ctx.replyWithMarkdown(
+            "Use the following invite links to join the groups you unlocked:",
+            Markup.inlineKeyboard(
+              invites.map((inv) => [Markup.button.url(inv.name, inv.link)])
+            )
+          );
+        } else {
+          ctx.reply(
+            "You are already a member of the groups of this guild " +
+              "so you will not receive any invite links."
+          );
+        }
+      } catch (err) {
+        logger.error(err);
+      }
+    } else helpCommand(ctx);
+  }
 };
 
 const leaveCommand = async (ctx: any): Promise<void> => {
@@ -168,10 +257,10 @@ const addCommand = async (
   >
 ): Promise<void> => {
   await ctx.replyWithMarkdown(
-    "Click to add Medusa bot to your group",
+    "Click to add Guild bot to your group",
     Markup.inlineKeyboard([
       Markup.button.url(
-        "Add Medusa",
+        "Add Guild bot",
         "https://t.me/AgoraMatterBridgerBot?startgroup=true"
       )
     ])
@@ -184,7 +273,11 @@ const newPoll = async (ctx: any): Promise<void> => {
       await Bot.Client.getChatMember(ctx.message.chat.id, ctx.message.from.id)
     ).status;
 
-    if (ctx.message.chat.type !== "supergroup") {
+    const guildIdRes = await axios
+      .get(`${config.backendUrl}/guild/platformId/${ctx.message.chat.id}`)
+      .catch(() => undefined);
+
+    if (!guildIdRes) {
       ctx.reply("Please use this command in a guild.");
       return;
     }
@@ -392,6 +485,7 @@ const cancelPoll = async (ctx: any): Promise<void> => {
 
 export {
   helpCommand,
+  onChatStart,
   leaveCommand,
   listCommunitiesCommand,
   pingCommand,

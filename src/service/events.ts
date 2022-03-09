@@ -1,13 +1,11 @@
-import axios, { AxiosResponse } from "axios";
-import { Context, Markup, NarrowedContext } from "telegraf";
-import { Message, Update } from "typegram";
+import axios from "axios";
+import { Context, NarrowedContext } from "telegraf";
+import { Update } from "typegram";
 import dayjs from "dayjs";
 import Bot from "../Bot";
-import { generateInvite } from "../api/actions";
 import {
   sendNotASuperGroup,
   fetchCommunitiesOfUser,
-  getGroupName,
   leaveCommunity,
   sendMessageForSupergroup,
   sendNotAnAdministrator,
@@ -92,100 +90,12 @@ const onMessage = async (ctx: any): Promise<void> => {
         await ctx.reply("I'm sorry, but I couldn't interpret your request.");
         await ctx.replyWithMarkdown(
           "You can find more information on the " +
-            "[Agora](https://agora.xyz/) website."
+            "[Guild](https://docs.guild.xyz/) website."
         );
       }
     } catch (err) {
       logger.error(err);
     }
-  }
-};
-
-const onChatStart = async (
-  ctx: NarrowedContext<
-    Context,
-    {
-      message: Update.New & Update.NonChannel & Message.TextMessage;
-      update_id: number;
-    }
-  >
-): Promise<void> => {
-  const { message } = ctx;
-
-  if (message.chat.id > 0) {
-    if (new RegExp(/^\/start [a-z0-9]{64}$/).test(message.text)) {
-      const refId = message.text.split("/start ")[1];
-      const platformUserId = message.from.id;
-
-      try {
-        await ctx.reply(
-          "Thank you for joining, I'll send the invites as soon as possible."
-        );
-
-        let res: AxiosResponse;
-        logger.verbose(`onChatStart join - ${refId} ${platformUserId}`);
-        try {
-          res = await axios.post(
-            `${config.backendUrl}/user/getAccessibleGroupIds`,
-            {
-              refId,
-              platformUserId
-            }
-          );
-        } catch (error) {
-          if (error?.response?.data?.errors?.[0]?.msg === "deleted") {
-            ctx.reply(
-              "This invite link has expired. Please, start the joining process through the guild page again."
-            );
-            return;
-          }
-          logger.error(`${JSON.stringify(error)}`);
-          ctx.reply(`Something went wrong. (${new Date().toUTCString()})`);
-          return;
-        }
-        logAxiosResponse(res);
-
-        if (res.data.length === 0) {
-          ctx.reply(
-            "There aren't any groups of this guild that you have access to."
-          );
-          return;
-        }
-
-        const invites: { link: string; name: string }[] = [];
-
-        await Promise.all(
-          res.data.map(async (groupId: string) => {
-            const inviteLink = await generateInvite(groupId, platformUserId);
-
-            if (inviteLink !== undefined) {
-              invites.push({
-                link: inviteLink,
-                name: await getGroupName(+groupId)
-              });
-            }
-          })
-        );
-
-        logger.verbose(`inviteLink: ${invites}`);
-
-        if (invites.length) {
-          ctx.replyWithMarkdown(
-            "Use the following invite links to join the groups you unlocked:",
-            Markup.inlineKeyboard(
-              invites.map((inv) => [Markup.button.url(inv.name, inv.link)])
-            )
-          );
-        } else {
-          ctx.reply(
-            "You are already a member of the groups of this guild " +
-              "so you will not receive any invite links."
-          );
-        }
-      } catch (err) {
-        logger.error(err);
-      }
-    } else onMessage(ctx);
   }
 };
 
@@ -494,7 +404,6 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
 };
 
 export {
-  onChatStart,
   onChatMemberUpdate,
   onMyChatMemberUpdate,
   onUserJoined,

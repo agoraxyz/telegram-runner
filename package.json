@@ -1,7 +1,7 @@
 {
-  "name": "agora-telegram-runner",
+  "name": "guild-telegram-runner",
   "version": "0.0.1",
-  "description": "A Telegram bot for the Agora project",
+  "description": "A Telegram bot for the Guild project",
   "main": "index.js",
   "scripts": {
     "dev": "ts-node-dev --exit-child src/Main.ts",
@@ -54,6 +54,7 @@
   "keywords": [
     "agora",
     "space",
+    "guild",
     "telegram",
     "bot",
     "crypto",

@@ -26,7 +26,7 @@ export default class Bot {
     });
 
     // inbuilt commands
-    bot.start(TGEvents.onChatStart);
+    bot.start(TGCommands.onChatStart);
     bot.help(TGCommands.helpCommand);
 
     // other commands
@@ -76,6 +76,6 @@ export default class Bot {
     process.once("SIGINT", () => bot.stop("SIGINT"));
     process.once("SIGTERM", () => bot.stop("SIGTERM"));
 
-    logger.verbose("Medousa is alive...");
+    logger.verbose("Guild bot is alive...");
   }
 }
