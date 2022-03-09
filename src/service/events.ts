@@ -27,14 +27,6 @@ const onMessage = async (ctx: any): Promise<void> => {
       const step = pollStorage.getUserStep(ctx.update.message.from.id);
       const messageText = ctx.update.message.text.trim();
 
-      if (
-        messageText === "/done" ||
-        messageText === "/cancel" ||
-        messageText === "/reset"
-      ) {
-        return;
-      }
-
       if (step === 2) {
         pollStorage.savePollQuestion(ctx.update.message.from.id, messageText);
         pollStorage.setUserStep(ctx.update.message.from.id, 3);
