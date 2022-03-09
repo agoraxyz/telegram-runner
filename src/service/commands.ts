@@ -65,7 +65,6 @@ const onChatStart = async (
 
   if (ctx.startPayload !== undefined && ctx.startPayload.includes("voters_")) {
     const [, pollId, chatId] = ctx.startPayload.split("_");
-    console.log("list voters: ", pollId);
     const pollResponse = await axios.get(`${config.backendUrl}/poll/${pollId}`);
     logAxiosResponse(pollResponse);
     if (pollResponse.data.length === 0) {
