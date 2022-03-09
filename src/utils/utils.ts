@@ -229,18 +229,12 @@ const pollBildResponse = async (userId: string): Promise<boolean> => {
   return false;
 };
 
-const sendPollTokenPicker = async (ctx: any): Promise<void> => {
-  const guildIdRes = await axios
-    .get(`${config.backendUrl}/guild/platformId/${ctx.message.chat.id}`)
-    .catch(() => undefined);
-
-  if (!guildIdRes) {
-    ctx.reply("Please use this command in a guild.");
-    return;
-  }
-
+const sendPollTokenPicker = async (
+  ctx: any,
+  guildId: number
+): Promise<void> => {
   const guildRes = await axios
-    .get(`${config.backendUrl}/guild/${guildIdRes.data.id}`)
+    .get(`${config.backendUrl}/guild/${guildId}`)
     .catch(() => undefined);
 
   if (!guildRes) {

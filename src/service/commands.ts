@@ -287,7 +287,7 @@ const newPoll = async (ctx: any): Promise<void> => {
       return;
     }
 
-    await sendPollTokenPicker(ctx);
+    await sendPollTokenPicker(ctx, guildIdRes.data.id);
 
     const userStep = pollStorage.getUserStep(ctx.message.from.id);
     if (userStep) {
@@ -454,12 +454,21 @@ const resetPoll = async (ctx: any): Promise<void> => {
       pollStorage.initPoll(ctx.message.from.id, poll.chatId);
       pollStorage.setUserStep(ctx.message.from.id, 1);
 
+      const guildIdRes = await axios
+        .get(`${config.backendUrl}/guild/platformId/${poll.chatId}`)
+        .catch(() => undefined);
+
+      if (!guildIdRes) {
+        ctx.reply("Please use this command in a guild.");
+        return;
+      }
+
       await Bot.Client.sendMessage(
         ctx.message.from.id,
         "The poll building process has been reset."
       );
 
-      await sendPollTokenPicker(ctx);
+      await sendPollTokenPicker(ctx, guildIdRes.data.id);
     }
   } catch (err) {
     logger.error(err);
