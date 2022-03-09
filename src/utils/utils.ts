@@ -44,7 +44,10 @@ const logAxiosResponse = (res: AxiosResponse<any>) => {
 const extractBackendErrorMessage = (error: any) =>
   error.response?.data?.errors[0]?.msg;
 
-const updatePollText = async (poll: Poll): Promise<string> => {
+const updatePollText = async (
+  poll: Poll,
+  chatId: number | string
+): Promise<string> => {
   let allVotes = 0;
   let numOfVoters = 0;
   let newPollText = `${poll.question}\n\n`;
@@ -91,7 +94,9 @@ const updatePollText = async (poll: Poll): Promise<string> => {
     numOfVoters += votesByOption[option].length;
   });
 
-  newPollText = newPollText.concat(`👥${numOfVoters} person voted so far.`);
+  newPollText = newPollText.concat(
+    `👥[${numOfVoters} person](https://t.me/${config.botUsername}?start=voters_${poll.id}_${chatId}) voted so far.`
+  );
 
   if (dayjs().isAfter(dayjs.unix(poll.expDate))) {
     newPollText = newPollText.concat("\n\nPoll has already ended.");
@@ -109,7 +114,8 @@ const updatePollText = async (poll: Poll): Promise<string> => {
 
 const createVoteListText = async (
   chatId: string,
-  poll: Poll
+  poll: Poll,
+  showBalance: boolean = true
 ): Promise<string> => {
   let allVotes: number = 0;
   let pollText: string = "Results:\n";
@@ -152,11 +158,18 @@ const createVoteListText = async (
             parseInt(vote.tgId, 10)
           ).catch(() => undefined);
 
-          if (!ChatMember) {
-            optionVotes[option].push(`Unknown_User ${vote.balance}\n`);
+          if (showBalance) {
+            if (!ChatMember) {
+              optionVotes[option].push(`Unknown_User ${vote.balance}\n`);
+            } else {
+              const username = ChatMember.user.first_name;
+              optionVotes[option].push(`${username} ${vote.balance}\n`);
+            }
+          } else if (!ChatMember) {
+            optionVotes[option].push(`Unknown_User\n`);
           } else {
             const username = ChatMember.user.first_name;
-            optionVotes[option].push(`${username} ${vote.balance}\n`);
+            optionVotes[option].push(`${username}\n`);
           }
         })
       );

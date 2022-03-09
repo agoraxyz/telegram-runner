@@ -286,7 +286,7 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
       }
 
       poll = pollResponse.data;
-      newPollText = await updatePollText(poll);
+      newPollText = await updatePollText(poll, chatId);
     } else if (action === "Vote") {
       const adminText = data.pop().split(":");
       [adminId] = adminText;
@@ -320,7 +320,7 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
         );
         logAxiosResponse(voteResponse);
       }
-      newPollText = await updatePollText(poll);
+      newPollText = await updatePollText(poll, chatId);
     }
 
     if (dayjs().isAfter(dayjs.unix(poll.expDate))) {
@@ -329,14 +329,16 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
         adminId,
         adminMessageId,
         undefined,
-        newPollText
+        newPollText,
+        { parse_mode: "Markdown" }
       ).catch(() => undefined);
 
       await Bot.Client.editMessageText(
         chatId,
         parseInt(pollMessageId, 10),
         undefined,
-        newPollText
+        newPollText,
+        { parse_mode: "Markdown" }
       ).catch(() => undefined);
       return;
     }
@@ -356,12 +358,6 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
       voteButtonRow.push(button);
     });
 
-    const inlineKeyboard = {
-      reply_markup: {
-        inline_keyboard: voteButtonRow
-      }
-    };
-
     const listVotersButton = {
       text: "List Voters",
       callback_data: `${chatId}:${pollMessageId};${poll.id};ListVoters`
@@ -376,7 +372,12 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
       parseInt(pollMessageId, 10),
       undefined,
       newPollText,
-      inlineKeyboard
+      {
+        parse_mode: "Markdown",
+        reply_markup: {
+          inline_keyboard: voteButtonRow
+        }
+      }
     ).catch(() => undefined);
 
     await Bot.Client.editMessageText(
@@ -385,6 +386,7 @@ const onCallbackQuery = async (ctx: any): Promise<void> => {
       undefined,
       newPollText,
       {
+        parse_mode: "Markdown",
         reply_markup: {
           inline_keyboard: [[listVotersButton, updateResultButton]]
         }
