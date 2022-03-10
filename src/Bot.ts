@@ -36,10 +36,10 @@ export default class Bot {
     bot.command("status", TGCommands.statusUpdateCommand);
     bot.command("groupid", TGCommands.groupIdCommand);
     bot.command("add", TGCommands.addCommand);
-    bot.command("poll", TGCommands.newPoll);
-    bot.command("done", TGCommands.startPoll);
-    bot.command("reset", TGCommands.resetPoll);
-    bot.command("cancel", TGCommands.cancelPoll);
+    bot.command("poll", TGCommands.pollCommand);
+    bot.command("done", TGCommands.doneCommand);
+    bot.command("reset", TGCommands.resetCommand);
+    bot.command("cancel", TGCommands.cancelCommand);
 
     // event listeners
     bot.on("text", TGEvents.onMessage);

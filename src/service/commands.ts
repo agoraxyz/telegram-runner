@@ -284,7 +284,7 @@ const addCommand = async (
   );
 };
 
-const newPoll = async (ctx: any): Promise<void> => {
+const pollCommand = async (ctx: any): Promise<void> => {
   try {
     const memberStatus = (
       await Bot.Client.getChatMember(ctx.message.chat.id, ctx.message.from.id)
@@ -336,7 +336,7 @@ const newPoll = async (ctx: any): Promise<void> => {
   }
 };
 
-const startPoll = async (ctx: any): Promise<void> => {
+const doneCommand = async (ctx: any): Promise<void> => {
   try {
     if (ctx.message.chat.type !== "private") {
       return;
@@ -460,7 +460,7 @@ const startPoll = async (ctx: any): Promise<void> => {
   }
 };
 
-const resetPoll = async (ctx: any): Promise<void> => {
+const resetCommand = async (ctx: any): Promise<void> => {
   try {
     if (ctx.message.chat.type !== "private") {
       return;
@@ -492,7 +492,7 @@ const resetPoll = async (ctx: any): Promise<void> => {
   }
 };
 
-const cancelPoll = async (ctx: any): Promise<void> => {
+const cancelCommand = async (ctx: any): Promise<void> => {
   try {
     if (ctx.message.chat.type !== "private") {
       return;
@@ -518,8 +518,8 @@ export {
   statusUpdateCommand,
   groupIdCommand,
   addCommand,
-  newPoll,
-  startPoll,
-  resetPoll,
-  cancelPoll
+  pollCommand,
+  doneCommand,
+  resetCommand,
+  cancelCommand
 };
