@@ -12,7 +12,7 @@ import {
   sendPollTokenPicker,
   extractBackendErrorMessage,
   logAxiosResponse,
-  pollBildResponse,
+  pollBuildResponse,
   createVoteListText
 } from "../utils/utils";
 import pollStorage from "./pollStorage";
@@ -341,7 +341,7 @@ const startPoll = async (ctx: any): Promise<void> => {
     if (ctx.message.chat.type !== "private") {
       return;
     }
-    if (await pollBildResponse(ctx.message.from.id)) {
+    if (await pollBuildResponse(ctx.message.from.id)) {
       return;
     }
     const poll = pollStorage.getPoll(ctx.message.from.id);

@@ -192,7 +192,7 @@ const createVoteListText = async (
   return pollText;
 };
 
-const pollBildResponse = async (userId: string): Promise<boolean> => {
+const pollBuildResponse = async (userId: string): Promise<boolean> => {
   switch (pollStorage.getUserStep(userId)) {
     case undefined:
       await Bot.Client.sendMessage(
@@ -299,6 +299,6 @@ export {
   extractBackendErrorMessage,
   updatePollText,
   createVoteListText,
-  pollBildResponse,
+  pollBuildResponse,
   sendPollTokenPicker
 };
