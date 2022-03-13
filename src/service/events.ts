@@ -1,7 +1,6 @@
 import axios from "axios";
 import { Context, NarrowedContext } from "telegraf";
 import { Update } from "typegram";
-import dayjs from "dayjs";
 import Bot from "../Bot";
 import {
   sendNotASuperGroup,
@@ -13,13 +12,8 @@ import {
 } from "./common";
 import config from "../config";
 import logger from "../utils/logger";
-import {
-  createVoteListText,
-  logAxiosResponse,
-  updatePollText
-} from "../utils/utils";
+import { logAxiosResponse } from "../utils/utils";
 import pollStorage from "./pollStorage";
-import { Poll } from "./types";
 
 const onMessage = async (ctx: any): Promise<void> => {
   if (ctx.update.message.chat.type === "private") {
@@ -210,193 +204,6 @@ const onMyChatMemberUpdate = async (ctx: any): Promise<void> => {
   }
 };
 
-const onCallbackQuery = async (ctx: any): Promise<void> => {
-  try {
-    const data: string[] = ctx.update.callback_query.data.split(";");
-    const action: string = data.pop();
-    const pollText = ctx.update.callback_query.message.text;
-    const platformUserId = ctx.update.callback_query.from.id;
-    let newPollText: string;
-    let poll: Poll;
-    let chatId: string;
-    let pollMessageId: string;
-    let adminId: string;
-    let adminMessageId: number;
-
-    if (action === "PickRequirement") {
-      const requrementId = data.pop();
-
-      pollStorage.saveReqId(
-        ctx.update.callback_query.message.chat.id,
-        requrementId
-      );
-
-      await Bot.Client.editMessageText(
-        ctx.update.callback_query.from.id,
-        ctx.update.callback_query.message.message_id,
-        undefined,
-        `Your choosen token is:\n\n${data[0]}`
-      ).catch(() => undefined);
-
-      pollStorage.setUserStep(ctx.update.callback_query.message.chat.id, 2);
-
-      await Bot.Client.sendMessage(
-        ctx.update.callback_query.message.chat.id,
-        "Now, send me the question of your poll."
-      );
-      return;
-    }
-
-    if (action === "ListVoters") {
-      const pollId = data.pop();
-      [chatId, pollMessageId] = data[0].split(":");
-      // for testing
-      logger.verbose(`ListVoters ${pollId}`);
-
-      const pollResponse = await axios.get(
-        `${config.backendUrl}/poll/${pollId}`
-      );
-      logAxiosResponse(pollResponse);
-
-      poll = pollResponse.data;
-
-      const responseText = await createVoteListText(chatId, poll);
-
-      await Bot.Client.sendMessage(
-        ctx.update.callback_query.from.id,
-        responseText
-      );
-      return;
-    }
-
-    if (action === "UpdateResult") {
-      const pollId = data.pop();
-      [chatId, pollMessageId] = data[0].split(":");
-      adminId = ctx.update.callback_query.message.chat.id;
-      adminMessageId = ctx.update.callback_query.message.message_id;
-      // for testing
-      logger.verbose(`UpdateResult ${pollId}`);
-      const pollResponse = await axios.get(
-        `${config.backendUrl}/poll/${pollId}`
-      );
-
-      logAxiosResponse(pollResponse);
-      if (pollResponse.data.length === 0) {
-        return;
-      }
-
-      poll = pollResponse.data;
-      newPollText = await updatePollText(poll, chatId);
-    } else if (action === "Vote") {
-      const adminText = data.pop().split(":");
-      [adminId] = adminText;
-      adminMessageId = parseInt(adminText[1], 10);
-      const pollId = data.pop();
-      chatId = ctx.update.callback_query.message.chat.id;
-      pollMessageId = ctx.update.callback_query.message.message_id;
-
-      // for testing
-      logger.verbose(`Vote ${pollId}`);
-      const voterOption = data.join(";");
-      const pollResponse = await axios.get(
-        `${config.backendUrl}/poll/${pollId}`
-      );
-
-      logAxiosResponse(pollResponse);
-      if (pollResponse.data.length === 0) {
-        return;
-      }
-
-      poll = pollResponse.data;
-
-      if (dayjs().isBefore(dayjs.unix(poll.expDate))) {
-        const voteResponse = await axios.post(
-          `${config.backendUrl}/poll/vote`,
-          {
-            pollId,
-            platformUserId,
-            option: voterOption
-          }
-        );
-        logAxiosResponse(voteResponse);
-      }
-      newPollText = await updatePollText(poll, chatId);
-    }
-
-    if (dayjs().isAfter(dayjs.unix(poll.expDate))) {
-      // Delete buttons
-      await Bot.Client.editMessageText(
-        adminId,
-        adminMessageId,
-        undefined,
-        newPollText,
-        { parse_mode: "Markdown" }
-      ).catch(() => undefined);
-
-      await Bot.Client.editMessageText(
-        chatId,
-        parseInt(pollMessageId, 10),
-        undefined,
-        newPollText,
-        { parse_mode: "Markdown" }
-      ).catch(() => undefined);
-      return;
-    }
-
-    if (newPollText === pollText) {
-      return;
-    }
-
-    const voteButtonRow: { text: string; callback_data: string }[][] = [];
-    poll.options.forEach((option) => {
-      const button = [
-        {
-          text: option,
-          callback_data: `${option};${poll.id};${adminId}:${adminMessageId};Vote`
-        }
-      ];
-      voteButtonRow.push(button);
-    });
-
-    const listVotersButton = {
-      text: "List Voters",
-      callback_data: `${chatId}:${pollMessageId};${poll.id};ListVoters`
-    };
-    const updateResultButton = {
-      text: "Update Result",
-      callback_data: `${chatId}:${pollMessageId};${poll.id};UpdateResult`
-    };
-
-    await Bot.Client.editMessageText(
-      chatId,
-      parseInt(pollMessageId, 10),
-      undefined,
-      newPollText,
-      {
-        parse_mode: "Markdown",
-        reply_markup: {
-          inline_keyboard: voteButtonRow
-        }
-      }
-    ).catch(() => undefined);
-
-    await Bot.Client.editMessageText(
-      adminId,
-      adminMessageId,
-      undefined,
-      newPollText,
-      {
-        parse_mode: "Markdown",
-        reply_markup: {
-          inline_keyboard: [[listVotersButton, updateResultButton]]
-        }
-      }
-    ).catch(() => undefined);
-  } catch (err) {
-    logger.error(err);
-  }
-};
-
 export {
   onChatMemberUpdate,
   onMyChatMemberUpdate,
@@ -404,6 +211,5 @@ export {
   onUserLeftGroup,
   onUserRemoved,
   onBlocked,
-  onMessage,
-  onCallbackQuery
+  onMessage
 };

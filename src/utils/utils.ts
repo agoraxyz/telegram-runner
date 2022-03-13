@@ -44,7 +44,7 @@ const logAxiosResponse = (res: AxiosResponse<any>) => {
 const extractBackendErrorMessage = (error: any) =>
   error.response?.data?.errors[0]?.msg;
 
-const updatePollText = async (
+const createPollText = async (
   poll: Poll,
   chatId: number | string
 ): Promise<string> => {
@@ -292,13 +292,98 @@ const sendPollTokenPicker = async (
   );
 };
 
+const updatePollTexts = async (
+  pollText: string,
+  newPollText: string,
+  poll: Poll,
+  chatId: string,
+  pollMessageId: string,
+  adminId: string,
+  adminMessageId: number
+): Promise<void> => {
+  try {
+    if (dayjs().isAfter(dayjs.unix(poll.expDate))) {
+      // Delete buttons
+      await Bot.Client.editMessageText(
+        adminId,
+        adminMessageId,
+        undefined,
+        newPollText,
+        { parse_mode: "Markdown" }
+      ).catch(() => undefined);
+
+      await Bot.Client.editMessageText(
+        chatId,
+        parseInt(pollMessageId, 10),
+        undefined,
+        newPollText,
+        { parse_mode: "Markdown" }
+      ).catch(() => undefined);
+      return;
+    }
+
+    if (newPollText === pollText) {
+      return;
+    }
+
+    const voteButtonRow: { text: string; callback_data: string }[][] = [];
+    poll.options.forEach((option) => {
+      const button = [
+        {
+          text: option,
+          callback_data: `${option};${poll.id};${adminId}:${adminMessageId};Vote`
+        }
+      ];
+      voteButtonRow.push(button);
+    });
+
+    const listVotersButton = {
+      text: "List Voters",
+      callback_data: `${chatId}:${pollMessageId};${poll.id};ListVoters`
+    };
+    const updateResultButton = {
+      text: "Update Result",
+      callback_data: `${chatId}:${pollMessageId};${poll.id};UpdateResult`
+    };
+
+    await Bot.Client.editMessageText(
+      chatId,
+      parseInt(pollMessageId, 10),
+      undefined,
+      newPollText,
+      {
+        parse_mode: "Markdown",
+        reply_markup: {
+          inline_keyboard: voteButtonRow
+        }
+      }
+    ).catch(() => undefined);
+
+    await Bot.Client.editMessageText(
+      adminId,
+      adminMessageId,
+      undefined,
+      newPollText,
+      {
+        parse_mode: "Markdown",
+        reply_markup: {
+          inline_keyboard: [[listVotersButton, updateResultButton]]
+        }
+      }
+    ).catch(() => undefined);
+  } catch (err) {
+    logger.error(err);
+  }
+};
+
 export {
   UnixTime,
   getErrorResult,
   logAxiosResponse,
   extractBackendErrorMessage,
-  updatePollText,
+  createPollText,
   createVoteListText,
   pollBuildResponse,
-  sendPollTokenPicker
+  sendPollTokenPicker,
+  updatePollTexts
 };

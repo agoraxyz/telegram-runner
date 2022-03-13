@@ -426,7 +426,7 @@ const doneCommand = async (ctx: any): Promise<void> => {
 
     const listVotersButton = {
       text: "List Voters",
-      callback_data: `${message.chat.id}:${message.message_id};${storedPoll.id};ListVoters`
+      callback_data: `${message.chat.id};${storedPoll.id};ListVoters`
     };
     const updateResultButton = {
       text: "Update Result",
