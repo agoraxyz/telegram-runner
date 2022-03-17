@@ -168,22 +168,29 @@ const isIn = async (groupId: number): Promise<IsInResult> => {
 
 const getUser = async (platformUserId: number) => {
   const chat = await Bot.Client.getChat(platformUserId);
-  const fileInfo = await axios.get(
-    `https://api.telegram.org/bot${config.telegramToken}/getFile?file_id=${chat.photo.small_file_id}`
-  );
 
-  if (!fileInfo.data.ok) {
-    throw Error("cannot fetch file info");
+  if (chat?.photo?.small_file_id) {
+    const fileInfo = await axios.get(
+      `https://api.telegram.org/bot${config.telegramToken}/getFile?file_id=${chat.photo.small_file_id}`
+    );
+
+    if (!fileInfo.data.ok) {
+      throw Error("cannot fetch file info");
+    }
+
+    const blob = await axios.get(
+      `https://api.telegram.org/file/bot${config.telegramToken}/${fileInfo.data.result.file_path}`,
+      { responseType: "arraybuffer" }
+    );
+
+    return {
+      username: (chat as any).username,
+      avatar: `data:image/jpeg;base64,${blob.data.toString("base64")}`
+    };
   }
 
-  const blob = await axios.get(
-    `https://api.telegram.org/file/bot${config.telegramToken}/${fileInfo.data.result.file_path}`,
-    { responseType: "arraybuffer" }
-  );
-
   return {
-    username: (chat as any).username,
-    avatar: `data:image/jpeg;base64,${blob.data.toString("base64")}`
+    username: (chat as any).username
   };
 };
 
