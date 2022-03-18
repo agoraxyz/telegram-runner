@@ -255,7 +255,7 @@ const sendPollTokenPicker = async (
     return;
   }
 
-  const requirements = guildRes.data.roles[0].role.requirements.filter(
+  const requirements = guildRes.data.roles[0].requirements.filter(
     (requirement) => requirement.type === "ERC20"
   );
 
