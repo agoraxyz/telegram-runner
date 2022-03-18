@@ -26,7 +26,7 @@ export default class Bot {
     });
 
     // inbuilt commands
-    bot.start(TGCommands.onChatStart);
+    bot.start(TGCommands.startCommand);
     bot.help(TGCommands.helpCommand);
 
     // other commands

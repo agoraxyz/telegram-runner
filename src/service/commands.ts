@@ -52,7 +52,7 @@ const helpCommand = (ctx: any): void => {
   });
 };
 
-const onChatStart = async (
+const startCommand = async (
   ctx: NarrowedContext<
     Context,
     {
@@ -93,7 +93,7 @@ const onChatStart = async (
         logger.verbose(`onChatStart join - ${refId} ${platformUserId}`);
         try {
           res = await axios.post(
-            `${config.backendUrl}/user/getAccessibleGroupIds`,
+            `${config.backendUrl}/telegram/accessibleGroups`,
             {
               refId,
               platformUserId
@@ -511,7 +511,7 @@ const cancelCommand = async (ctx: any): Promise<void> => {
 
 export {
   helpCommand,
-  onChatStart,
+  startCommand,
   leaveCommand,
   listCommunitiesCommand,
   pingCommand,
