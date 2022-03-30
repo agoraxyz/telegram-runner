@@ -155,6 +155,41 @@ const isIn = async (groupId: number): Promise<IsInResult> => {
         message: "It seems like our Bot hasn't got the right permissions."
       };
     }
+
+    if (chat?.photo?.small_file_id) {
+      try {
+        const fileInfo = await axios.get(
+          `https://api.telegram.org/bot${config.telegramToken}/getFile?file_id=${chat.photo.small_file_id}`
+        );
+
+        if (!fileInfo.data.ok) {
+          throw Error("cannot fetch file info");
+        }
+
+        const blob = await axios.get(
+          `https://api.telegram.org/file/bot${config.telegramToken}/${fileInfo.data.result.file_path}`,
+          { responseType: "arraybuffer" }
+        );
+
+        return {
+          ok: true,
+          groupName: chat.title,
+          groupIcon: `data:image/jpeg;base64,${blob.data.toString("base64")}`
+        };
+      } catch {
+        return {
+          ok: true,
+          groupName: chat.title,
+          groupIcon: ""
+        };
+      }
+    }
+
+    return {
+      ok: true,
+      groupName: chat.title,
+      groupIcon: ""
+    };
   } catch (err) {
     return {
       ok: false,
@@ -162,8 +197,6 @@ const isIn = async (groupId: number): Promise<IsInResult> => {
         "You have to add @Guildxyz_bot to your Telegram group to continue!"
     };
   }
-
-  return { ok: true };
 };
 
 const getUser = async (platformUserId: number) => {
