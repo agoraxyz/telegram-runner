@@ -49,7 +49,7 @@ const pickRequirementAction = async (ctx: any): Promise<void> => {
       ctx.update.callback_query.message.message_id,
       undefined,
       `Your choosen token is:\n\n${requrementInfo}`
-    ).catch(() => undefined);
+    );
 
     pollStorage.setUserStep(ctx.update.callback_query.message.chat.id, 2);
 
@@ -65,9 +65,6 @@ const pickRequirementAction = async (ctx: any): Promise<void> => {
 const listVotersAction = async (ctx: any): Promise<void> => {
   try {
     const [chatId, pollId] = ctx.update.callback_query.data.split(";");
-
-    // for testing
-    logger.verbose(`ListVoters ${pollId}`);
 
     const pollResponse = await axios.get(`${config.backendUrl}/poll/${pollId}`);
     logAxiosResponse(pollResponse);
@@ -93,8 +90,6 @@ const updateResultAction = async (ctx: any): Promise<void> => {
     const [chatId, pollMessageId] = data[0].split(":");
     const adminId = ctx.update.callback_query.message.chat.id;
     const adminMessageId = ctx.update.callback_query.message.message_id;
-    // for testing
-    logger.verbose(`UpdateResult ${pollId}`);
     const pollResponse = await axios.get(`${config.backendUrl}/poll/${pollId}`);
 
     logAxiosResponse(pollResponse);
@@ -131,13 +126,11 @@ const voteAction = async (ctx: any): Promise<void> => {
     const chatId = ctx.update.callback_query.message.chat.id;
     const pollMessageId = ctx.update.callback_query.message.message_id;
     const platformUserId = ctx.update.callback_query.from.id;
-
-    // for testing
-    logger.verbose(`Vote ${pollId}`);
     const voterOption = data.join(";");
     const pollResponse = await axios.get(`${config.backendUrl}/poll/${pollId}`);
 
     logAxiosResponse(pollResponse);
+
     if (pollResponse.data.length === 0) {
       return;
     }
@@ -150,8 +143,10 @@ const voteAction = async (ctx: any): Promise<void> => {
         platformUserId,
         option: voterOption
       });
+
       logAxiosResponse(voteResponse);
     }
+
     const newPollText = await createPollText(poll, chatId);
 
     await updatePollTexts(
@@ -170,60 +165,7 @@ const voteAction = async (ctx: any): Promise<void> => {
 
 const createGroup = async (title: string) => {
   logger.verbose(`createGroup ${title}`);
-  // TODO mtproto implementation
-  // const { username } = await Bot.Client.getMe();
-  // const userResult = await mtprotoApi.call("contacts.resolveUsername", {
-  //   username
-  // });
-  // logger.verbose(`userResult ${JSON.stringify(userResult)}`);
-  // const user_id = {
-  //   _: "inputUser",
-  //   user_id: userResult.users[0].id,
-  //   access_hash: userResult.users[0].access_hash
-  // };
 
-  // logger.verbose(`userResult ${user_id}`);
-
-  // const supergroupResult = await mtprotoApi.call("channels.createChannel", {
-  //   megagroup: true,
-  //   title
-  // });
-
-  // logger.verbose(`supergroupResult ${JSON.stringify(supergroupResult)}`);
-
-  // const channel = {
-  //   _: "inputChannel",
-  //   channel_id: supergroupResult.chats[0].id,
-  //   access_hash: supergroupResult.chats[0].access_hash
-  // };
-
-  // logger.verbose(`channel ${JSON.stringify(channel)}`);
-
-  // await mtprotoApi.call("channels.inviteToChannel", {
-  //   channel,
-  //   users: [user_id]
-  // });
-
-  // await mtprotoApi.call("channels.editAdmin", {
-  //   channel,
-  //   user_id,
-  //   admin_rights: {
-  //     _: "chatAdminRights",
-  //     change_info: true,
-  //     post_messages: true,
-  //     edit_messages: true,
-  //     delete_messages: true,
-  //     ban_users: true,
-  //     invite_users: true,
-  //     pin_messages: true,
-  //     add_admins: true
-  //   },
-  //   rank: "Medusa"
-  // });
-
-  // await mtprotoApi.call("channels.leaveChannel", { channel });
-
-  // return `-100${channel.channel_id}`;
   return -1;
 };
 

@@ -52,35 +52,47 @@ const helpCommand = (ctx: any): void => {
   });
 };
 
-const startCommand = async (
-  ctx: NarrowedContext<
-    Context,
-    {
-      message: Update.New & Update.NonChannel & Message.TextMessage;
-      update_id: number;
-    }
-  > & { startPayload?: string }
-): Promise<void> => {
+type Ctx = NarrowedContext<
+  Context,
+  {
+    message: Update.New & Update.NonChannel & Message.TextMessage;
+    update_id: number;
+  }
+> & { startPayload?: string };
+
+const startCommand = async (ctx: Ctx): Promise<void> => {
   const { message } = ctx;
 
-  if (ctx.startPayload !== undefined && ctx.startPayload.includes("voters_")) {
+  if (ctx.startPayload?.includes("voters_")) {
     const [, pollId, chatId] = ctx.startPayload.split("_");
-    const pollResponse = await axios.get(`${config.backendUrl}/poll/${pollId}`);
-    logAxiosResponse(pollResponse);
-    if (pollResponse.data.length === 0) {
-      await ctx.reply("Failed to fetch voters");
+
+    try {
+      const pollResponse = await axios.get(
+        `${config.backendUrl}/poll/${pollId}`
+      );
+
+      logAxiosResponse(pollResponse);
+
+      if (pollResponse?.data?.length === 0) {
+        await ctx.reply("Failed to fetch voters");
+      }
+
+      const poll = pollResponse.data;
+
+      const responseText = await createVoteListText(chatId, poll, false);
+
+      await ctx.reply(responseText);
+    } catch (e) {
+      logger.error(e);
     }
 
-    const poll = pollResponse.data;
-
-    const responseText = await createVoteListText(chatId, poll, false);
-
-    await ctx.reply(responseText);
     return;
   }
 
   if (message.chat.id > 0) {
-    if (new RegExp(/^\/start [a-z0-9]{64}$/).test(message.text)) {
+    const refIdRegex = new RegExp(/^\/start [a-z0-9]{64}$/);
+
+    if (refIdRegex.test(message.text)) {
       const refId = message.text.split("/start ")[1];
       const platformUserId = message.from.id;
 
@@ -90,7 +102,9 @@ const startCommand = async (
         );
 
         let res: AxiosResponse;
+
         logger.verbose(`onChatStart join - ${refId} ${platformUserId}`);
+
         try {
           res = await axios.post(
             `${config.backendUrl}/telegram/accessibleGroups`,
@@ -106,16 +120,21 @@ const startCommand = async (
             );
             return;
           }
+
           logger.error(`${JSON.stringify(error)}`);
+
           ctx.reply(`Something went wrong. (${new Date().toUTCString()})`);
+
           return;
         }
+
         logAxiosResponse(res);
 
         if (res.data.length === 0) {
           ctx.reply(
             "There aren't any groups of this guild that you have access to."
           );
+
           return;
         }
 
@@ -145,20 +164,22 @@ const startCommand = async (
           );
         } else {
           ctx.reply(
-            "You are already a member of the groups of this guild " +
-              "so you will not receive any invite links."
+            "You are already a member of the groups of this guild so you will not receive any invite links."
           );
         }
       } catch (err) {
         logger.error(err);
       }
-    } else helpCommand(ctx);
+    } else {
+      helpCommand(ctx);
+    }
   }
 };
 
 const leaveCommand = async (ctx: any): Promise<void> => {
   try {
     const platformUserId = ctx.message.from.id;
+
     const res = await axios.get(
       `${config.backendUrl}/user/getUserCommunitiesByTelegramId/${platformUserId}`
     );
@@ -227,6 +248,7 @@ const pingCommand = async (ctx: any): Promise<void> => {
 const statusUpdateCommand = async (ctx: any): Promise<void> => {
   const { message } = ctx.update;
   const platformUserId = message.from.id;
+
   try {
     await ctx.reply(
       "I'll update your community accesses as soon as possible. (It could take up to 2 minutes.)"
@@ -239,10 +261,12 @@ const statusUpdateCommand = async (ctx: any): Promise<void> => {
       },
       { timeout: 150000 }
     );
+
     if (typeof res.data !== "string") {
       await ctx.reply(
         "Currently you should get access to these Communities below: "
       );
+
       await Promise.all(
         res.data.map(async (c: LevelInfo) => {
           await ctx.reply(
@@ -253,6 +277,7 @@ const statusUpdateCommand = async (ctx: any): Promise<void> => {
     } else {
       await ctx.reply("There is no such User with this telegramId.");
     }
+
     logAxiosResponse(res);
   } catch (err) {
     logger.error(err);
@@ -264,21 +289,13 @@ const groupIdCommand = async (ctx: any): Promise<void> =>
     reply_to_message_id: ctx.update.message.message_id
   });
 
-const addCommand = async (
-  ctx: NarrowedContext<
-    Context,
-    {
-      message: Update.New & Update.NonChannel & Message.TextMessage;
-      update_id: number;
-    }
-  >
-): Promise<void> => {
+const addCommand = async (ctx: Ctx): Promise<void> => {
   await ctx.replyWithMarkdown(
     "Click to add Guild bot to your group",
     Markup.inlineKeyboard([
       Markup.button.url(
         "Add Guild bot",
-        "https://t.me/AgoraMatterBridgerBot?startgroup=true"
+        "https://t.me/Guildxyz_bot?startgroup=true"
       )
     ])
   );
@@ -286,13 +303,15 @@ const addCommand = async (
 
 const pollCommand = async (ctx: any): Promise<void> => {
   try {
+    const platformUserId = ctx.message.from.id;
+
     const memberStatus = (
-      await Bot.Client.getChatMember(ctx.message.chat.id, ctx.message.from.id)
+      await Bot.Client.getChatMember(ctx.message.chat.id, platformUserId)
     ).status;
 
-    const guildIdRes = await axios
-      .get(`${config.backendUrl}/guild/platformId/${ctx.message.chat.id}`)
-      .catch(() => undefined);
+    const guildIdRes = await axios.get(
+      `${config.backendUrl}/guild/platformId/${ctx.message.chat.id}`
+    );
 
     if (!guildIdRes) {
       ctx.reply("Please use this command in a guild.");
@@ -306,29 +325,31 @@ const pollCommand = async (ctx: any): Promise<void> => {
 
     await sendPollTokenPicker(ctx, guildIdRes.data.id);
 
-    const userStep = pollStorage.getUserStep(ctx.message.from.id);
+    const userStep = pollStorage.getUserStep(platformUserId);
+
     if (userStep) {
-      pollStorage.deleteMemory(ctx.message.from.id);
+      pollStorage.deleteMemory(platformUserId);
     }
 
-    pollStorage.initPoll(ctx.message.from.id, ctx.chat.id.toString());
-    pollStorage.setUserStep(ctx.message.from.id, 1);
+    pollStorage.initPoll(platformUserId, ctx.chat.id.toString());
+    pollStorage.setUserStep(platformUserId, 1);
 
-    const ChatMember = await Bot.Client.getChatMember(
+    const chatMember = await Bot.Client.getChatMember(
       ctx.chat.id,
-      ctx.message.from.id
-    ).catch(() => undefined);
+      platformUserId
+    );
 
-    if (!ChatMember) {
+    if (!chatMember) {
       ctx.reply("Check your private messages!");
     } else {
-      const userName = ChatMember.user.username;
-      if (!userName) {
+      const { username, first_name } = chatMember.user;
+
+      if (!username) {
         ctx.replyWithMarkdown(
-          `[${ChatMember.user.first_name}](tg://user?id=${ctx.message.from.id}) check your private messages!`
+          `[${first_name}](tg://user?id=${platformUserId}) check your private messages!`
         );
       } else {
-        ctx.reply(`@${userName} check your private messages!`);
+        ctx.reply(`@${username} check your private messages!`);
       }
     }
   } catch (err) {
@@ -337,26 +358,20 @@ const pollCommand = async (ctx: any): Promise<void> => {
 };
 
 const doneCommand = async (ctx: any): Promise<void> => {
+  const userId = ctx.message.from.id;
+
   try {
     if (ctx.message.chat.type !== "private") {
       return;
     }
-    if (await pollBuildResponse(ctx.message.from.id)) {
+
+    if (await pollBuildResponse(userId)) {
       return;
     }
-    const poll = pollStorage.getPoll(ctx.message.from.id);
-    const { chatId } = poll;
 
-    // for testing
-    logger.verbose(`chat: ${chatId}`);
-    logger.verbose(`poll: ${JSON.stringify(poll)}`);
-
-    const voteButtonRow: { text: string; callback_data: string }[][] = [];
+    const poll = pollStorage.getPoll(userId);
 
     const duration = poll.date.split(":");
-
-    // for testing
-    logger.verbose(`duration: ${duration}`);
 
     const startDate = dayjs().unix();
     const expDate = dayjs()
@@ -365,19 +380,17 @@ const doneCommand = async (ctx: any): Promise<void> => {
       .add(parseInt(duration[2], 10), "minute")
       .unix();
 
-    // for testing
-    logger.verbose(`startDate: ${startDate}`);
-    logger.verbose(`expDate: ${expDate}`);
+    const { chatId, requirementId, question, options } = poll;
 
     const res = await axios.post(
       `${config.backendUrl}/poll`,
       {
-        groupId: poll.chatId,
-        requirementId: poll.requirementId,
-        question: poll.question,
+        groupId: chatId,
+        requirementId,
+        question,
         startDate,
         expDate,
-        options: poll.options
+        options
       },
       { timeout: 150000 }
     );
@@ -388,29 +401,26 @@ const doneCommand = async (ctx: any): Promise<void> => {
 
     let pollText = `${poll.question}\n\n`;
 
-    const adminMessage = await Bot.Client.sendMessage(
-      ctx.message.from.id,
-      pollText
-    );
+    const adminMessage = await Bot.Client.sendMessage(userId, pollText);
 
     poll.options.forEach((option) => {
-      pollText = `${pollText}${option}\n▫️0%\n\n`;
-      const button = [
+      pollText += `${option}\n▫️0%\n\n`;
+    });
+
+    const voteButtonRow: { text: string; callback_data: string }[][] =
+      poll.options.map((option) => [
         {
           text: option,
-          callback_data: `${option};${storedPoll.id};${ctx.message.from.id}:${adminMessage.message_id};Vote`
+          callback_data: `${option};${storedPoll.id};${userId}:${adminMessage.message_id};Vote`
         }
-      ];
-      voteButtonRow.push(button);
-    });
-    pollText = pollText.concat(`👥 0 person voted so far.`);
+      ]);
 
-    pollText = pollText.concat(
-      `\n\nPoll ends on ${dayjs
-        .unix(expDate)
-        .utc()
-        .format("YYYY-MM-DD HH:mm UTC")}`
-    );
+    pollText += `👥 0 person voted so far.`;
+
+    pollText += `\n\nPoll ends on ${dayjs
+      .unix(expDate)
+      .utc()
+      .format("YYYY-MM-DD HH:mm UTC")}`;
 
     const inlineKeyboard = {
       reply_markup: {
@@ -428,13 +438,14 @@ const doneCommand = async (ctx: any): Promise<void> => {
       text: "List Voters",
       callback_data: `${message.chat.id};${storedPoll.id};ListVoters`
     };
+
     const updateResultButton = {
       text: "Update Result",
       callback_data: `${message.chat.id}:${message.message_id};${storedPoll.id};UpdateResult`
     };
 
     await Bot.Client.editMessageText(
-      ctx.message.from.id,
+      userId,
       adminMessage.message_id,
       undefined,
       pollText,
@@ -445,17 +456,20 @@ const doneCommand = async (ctx: any): Promise<void> => {
       }
     );
 
-    pollStorage.deleteMemory(ctx.message.from.id);
+    pollStorage.deleteMemory(userId);
   } catch (err) {
-    pollStorage.deleteMemory(ctx.message.from.id);
+    pollStorage.deleteMemory(userId);
     Bot.Client.sendMessage(
-      ctx.message.from.id,
+      userId,
       "Something went wrong. Please try again or contact us."
     );
+
     const errorMessage = extractBackendErrorMessage(err);
+
     if (errorMessage === "Poll can't be created for this guild.") {
-      await Bot.Client.sendMessage(ctx.message.from.id, errorMessage);
+      await Bot.Client.sendMessage(userId, errorMessage);
     }
+
     logger.error(err);
   }
 };
@@ -465,11 +479,15 @@ const resetCommand = async (ctx: any): Promise<void> => {
     if (ctx.message.chat.type !== "private") {
       return;
     }
-    if (pollStorage.getUserStep(ctx.message.from.id) > 0) {
-      const poll = pollStorage.getPoll(ctx.message.from.id);
-      pollStorage.deleteMemory(ctx.message.from.id);
-      pollStorage.initPoll(ctx.message.from.id, poll.chatId);
-      pollStorage.setUserStep(ctx.message.from.id, 1);
+
+    const userId = ctx.message.from.id;
+
+    if (pollStorage.getUserStep(userId) > 0) {
+      const poll = pollStorage.getPoll(userId);
+
+      pollStorage.deleteMemory(userId);
+      pollStorage.initPoll(userId, poll.chatId);
+      pollStorage.setUserStep(userId, 1);
 
       const guildIdRes = await axios
         .get(`${config.backendUrl}/guild/platformId/${poll.chatId}`)
@@ -481,7 +499,7 @@ const resetCommand = async (ctx: any): Promise<void> => {
       }
 
       await Bot.Client.sendMessage(
-        ctx.message.from.id,
+        userId,
         "The poll building process has been reset."
       );
 
@@ -497,10 +515,14 @@ const cancelCommand = async (ctx: any): Promise<void> => {
     if (ctx.message.chat.type !== "private") {
       return;
     }
-    if (pollStorage.getUserStep(ctx.message.from.id) > 0) {
-      pollStorage.deleteMemory(ctx.message.from.id);
+
+    const userId = ctx.message.from.id;
+
+    if (pollStorage.getUserStep(userId) > 0) {
+      pollStorage.deleteMemory(userId);
+
       await Bot.Client.sendMessage(
-        ctx.message.from.id,
+        userId,
         "The poll creation process has been cancelled. Use /poll to create a new poll."
       );
     }

@@ -57,6 +57,7 @@ const createPollText = async (
   );
 
   logAxiosResponse(pollResult);
+
   if (pollResult.data.length === 0) {
     throw new Error("Poll query failed for counting result.");
   }
@@ -66,20 +67,17 @@ const createPollText = async (
   });
 
   poll.options.forEach((option) => {
-    newPollText = newPollText.concat(`${option}\n`);
-    if (pollResult.data[option] > 0) {
-      const persentage = ((pollResult.data[option] / allVotes) * 100).toFixed(
-        2
-      );
-      newPollText = newPollText.concat(`▫️${persentage}%\n\n`);
-    } else {
-      newPollText = newPollText.concat(`▫️0%\n\n`);
-    }
+    newPollText += `${option}\n${
+      pollResult.data[option] > 0
+        ? ((pollResult.data[option] / allVotes) * 100).toFixed(2)
+        : "▫️0"
+    }%\n\n`;
   });
 
   const votersResponse = await axios.get(
     `${config.backendUrl}/poll/voters/${poll.id}`
   );
+
   logAxiosResponse(votersResponse);
 
   if (votersResponse.data.length === 0) {
@@ -123,7 +121,9 @@ const createVoteListText = async (
   const pollResult = await axios.get(
     `${config.backendUrl}/poll/result/${poll.id}`
   );
+
   logAxiosResponse(pollResult);
+
   if (pollResult.data.length === 0) {
     throw new Error("Poll query failed for listing votes.");
   }
@@ -131,7 +131,9 @@ const createVoteListText = async (
   const votersResponse = await axios.get(
     `${config.backendUrl}/poll/voters/${poll.id}`
   );
+
   logAxiosResponse(votersResponse);
+
   if (votersResponse.data.length === 0) {
     throw new Error("Failed to query user votes.");
   }
@@ -153,23 +155,21 @@ const createVoteListText = async (
       const votes = votesByOption[option];
       await Promise.all(
         votes.map(async (vote) => {
-          const ChatMember = await Bot.Client.getChatMember(
+          const chatMember = await Bot.Client.getChatMember(
             chatId,
             parseInt(vote.tgId, 10)
-          ).catch(() => undefined);
+          );
 
           if (showBalance) {
-            if (!ChatMember) {
-              optionVotes[option].push(`Unknown_User ${vote.balance}\n`);
-            } else {
-              const username = ChatMember.user.first_name;
-              optionVotes[option].push(`${username} ${vote.balance}\n`);
-            }
-          } else if (!ChatMember) {
-            optionVotes[option].push(`Unknown_User\n`);
+            optionVotes[option].push(
+              chatMember
+                ? `${chatMember.user.first_name} ${vote.balance}\n`
+                : `Unknown_User ${vote.balance}\n`
+            );
           } else {
-            const username = ChatMember.user.first_name;
-            optionVotes[option].push(`${username}\n`);
+            optionVotes[option].push(
+              chatMember ? `${chatMember.user.first_name}\n` : `Unknown_User\n`
+            );
           }
         })
       );
@@ -177,16 +177,15 @@ const createVoteListText = async (
   );
 
   poll.options.forEach((option: string) => {
-    pollText = pollText.concat(`\n▫️ ${option} - `);
-    if (pollResult.data[option] > 0) {
-      const persentage = ((pollResult.data[option] / allVotes) * 100).toFixed(
-        2
-      );
-      pollText = pollText.concat(`${persentage}%\n`);
-    } else {
-      pollText = pollText.concat(`0%\n`);
-    }
-    pollText = pollText.concat(optionVotes[option].join(""));
+    pollText += `\n▫️ ${option} - `;
+
+    pollText += `${
+      pollResult.data[option] > 0
+        ? ((pollResult.data[option] / allVotes) * 100).toFixed(2)
+        : 0
+    }%\n`;
+
+    pollText += optionVotes[option].join("");
   });
 
   return pollText;
@@ -246,9 +245,7 @@ const sendPollTokenPicker = async (
   ctx: any,
   guildId: number
 ): Promise<void> => {
-  const guildRes = await axios
-    .get(`${config.backendUrl}/guild/${guildId}`)
-    .catch(() => undefined);
+  const guildRes = await axios.get(`${config.backendUrl}/guild/${guildId}`);
 
   if (!guildRes) {
     ctx.reply("Something went wrong. Please try again or contact us.");
@@ -263,27 +260,26 @@ const sendPollTokenPicker = async (
     await Bot.Client.sendMessage(
       ctx.message.from.id,
       "Your guild has no requirement with an appropriate token standard." +
-        "Creating a weighted poll with the NFT or the 1155 standard is not supported."
+        "Weighted polls only support ERC20."
     );
     return;
   }
 
-  const tokenButtons: { text: string; callback_data: string }[][] = [];
+  const tokenButtons = requirements.map((requirement) => {
+    const { name, chain, address, id } = requirement;
 
-  requirements.forEach((requirement) => {
-    const button = [
+    return [
       {
-        text: `${requirement.name}-${requirement.chain}-${requirement.address}`,
-        callback_data: `${requirement.name}-${requirement.chain};${requirement.id};PickRequirement`
+        text: `${name}-${chain}-${address}`,
+        callback_data: `${name}-${chain};${id};PickRequirement`
       }
     ];
-    tokenButtons.push(button);
   });
 
   await Bot.Client.sendMessage(
     ctx.message.from.id,
-    "Let's start creating your poll. You can use /reset or /cancel to restart or stop the process any time.\n\n" +
-      "First, choose a token as the base of the weighted vote.",
+    "Let's start creating your poll. You can use /reset or /cancel to restart or stop the process at any time.\n\n" +
+      "First, please choose a token as the base of the weighted vote.",
     {
       reply_markup: {
         inline_keyboard: tokenButtons
@@ -302,6 +298,10 @@ const updatePollTexts = async (
   adminMessageId: number
 ): Promise<void> => {
   try {
+    if (newPollText === pollText) {
+      return;
+    }
+
     if (dayjs().isAfter(dayjs.unix(poll.expDate))) {
       // Delete buttons
       await Bot.Client.editMessageText(
@@ -310,7 +310,7 @@ const updatePollTexts = async (
         undefined,
         newPollText,
         { parse_mode: "Markdown" }
-      ).catch(() => undefined);
+      );
 
       await Bot.Client.editMessageText(
         chatId,
@@ -318,29 +318,23 @@ const updatePollTexts = async (
         undefined,
         newPollText,
         { parse_mode: "Markdown" }
-      ).catch(() => undefined);
+      );
+
       return;
     }
 
-    if (newPollText === pollText) {
-      return;
-    }
-
-    const voteButtonRow: { text: string; callback_data: string }[][] = [];
-    poll.options.forEach((option) => {
-      const button = [
-        {
-          text: option,
-          callback_data: `${option};${poll.id};${adminId}:${adminMessageId};Vote`
-        }
-      ];
-      voteButtonRow.push(button);
-    });
+    const voteButtonRow = poll.options.map((option) => [
+      {
+        text: option,
+        callback_data: `${option};${poll.id};${adminId}:${adminMessageId};Vote`
+      }
+    ]);
 
     const listVotersButton = {
       text: "List Voters",
       callback_data: `${chatId}:${pollMessageId};${poll.id};ListVoters`
     };
+
     const updateResultButton = {
       text: "Update Result",
       callback_data: `${chatId}:${pollMessageId};${poll.id};UpdateResult`
@@ -357,7 +351,7 @@ const updatePollTexts = async (
           inline_keyboard: voteButtonRow
         }
       }
-    ).catch(() => undefined);
+    );
 
     await Bot.Client.editMessageText(
       adminId,
@@ -370,7 +364,7 @@ const updatePollTexts = async (
           inline_keyboard: [[listVotersButton, updateResultButton]]
         }
       }
-    ).catch(() => undefined);
+    );
   } catch (err) {
     logger.error(err);
   }

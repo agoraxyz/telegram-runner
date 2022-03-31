@@ -18,65 +18,60 @@ import pollStorage from "./pollStorage";
 const onMessage = async (ctx: any): Promise<void> => {
   if (ctx.update.message.chat.type === "private") {
     try {
-      const step = pollStorage.getUserStep(ctx.update.message.from.id);
+      const userId = ctx.update.message.from.id;
+      const step = pollStorage.getUserStep(userId);
       const messageText = ctx.update.message.text.trim();
 
       if (step === 2) {
-        pollStorage.savePollQuestion(ctx.update.message.from.id, messageText);
-        pollStorage.setUserStep(ctx.update.message.from.id, 3);
+        pollStorage.savePollQuestion(userId, messageText);
+        pollStorage.setUserStep(userId, 3);
         await Bot.Client.sendMessage(
-          ctx.update.message.from.id,
-          "Now send me the duration of your poll in DD:HH:mm format. " +
-            'For example if you want your poll to be active for 1.5 hours, you should send "0:1:30".'
+          userId,
+          'Now send me the duration of your poll in DD:HH:mm format. For example if you want your poll to be active for 1.5 hours, you should send "0:1:30" or "00:01:30".'
         );
       } else if (step === 3) {
-        const regex =
+        const dateRegex =
           /([1-9][0-9]*|[0-9]):([0-1][0-9]|[0-9]|[2][0-4]):([0-5][0-9]|[0-9])/;
-        const found = messageText.match(regex);
+        const found = messageText.match(dateRegex);
         if (!found) {
           await Bot.Client.sendMessage(
-            ctx.update.message.from.id,
-            "The message you sent me is not in the DD:HH:mm format. " +
-              "Please verify the contents of your message and send again."
+            userId,
+            "The message you sent me is not in the DD:HH:mm format. Please verify the contents of your message and send again."
           );
           return;
         }
         const date = found[0];
-        pollStorage.savePollExpDate(ctx.update.message.from.id, date);
-        pollStorage.setUserStep(ctx.update.message.from.id, 4);
+        pollStorage.savePollExpDate(userId, date);
+        pollStorage.setUserStep(userId, 4);
         await Bot.Client.sendMessage(
-          ctx.update.message.from.id,
+          userId,
           "Now send me the first option of your poll."
         );
       } else if (step >= 4) {
-        const optionSaved = pollStorage.savePollOption(
-          ctx.update.message.from.id,
-          messageText
-        );
+        const optionSaved = pollStorage.savePollOption(userId, messageText);
         if (!optionSaved) {
           await Bot.Client.sendMessage(
-            ctx.update.message.from.id,
+            userId,
             "This option is invalid please send me another."
           );
           return;
         }
         if (step === 4) {
           await Bot.Client.sendMessage(
-            ctx.update.message.from.id,
+            userId,
             "Send me the second option of your poll."
           );
         } else if (step >= 5) {
           await Bot.Client.sendMessage(
-            ctx.update.message.from.id,
+            userId,
             "You can send me another option or use /done to start and publish your poll."
           );
         }
-        pollStorage.setUserStep(ctx.update.message.from.id, step + 1);
+        pollStorage.setUserStep(userId, step + 1);
       } else {
         await ctx.reply("I'm sorry, but I couldn't interpret your request.");
         await ctx.replyWithMarkdown(
-          "You can find more information on the " +
-            "[Guild](https://docs.guild.xyz/) website."
+          "You can find more information on the [Guild](https://docs.guild.xyz/) website."
         );
       }
     } catch (err) {
