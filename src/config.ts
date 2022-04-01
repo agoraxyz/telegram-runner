@@ -12,8 +12,6 @@ if (envFound.error && !process.env.BOT_TOKEN)
 const telegramToken = process.env.BOT_TOKEN;
 const botUsername = process.env.BOT_USERNAME;
 const backendUrl = process.env.BACKEND_URL;
-const mtprotoApiId = process.env.MTPROTO_API_ID;
-const mtprotoApiHash = process.env.MTPROTO_API_HASH;
 const api = {
   prefix: "/api",
   port: process.env.PORT || 8991
@@ -31,22 +29,12 @@ if (!botUsername)
 if (!backendUrl)
   throw new Error("You need to specify the BACKEND_URL in the .env file.");
 
-if (!mtprotoApiId)
-  throw new Error("You need to specify the MTPROTO_API_ID in the .env file.");
-
-if (!mtprotoApiHash)
-  throw new Error("You need to specify the MTPROTO_API_HASH in the .env file.");
-
 export default {
   telegramToken,
   botUsername,
   backendUrl,
   api,
   platform: "TELEGRAM",
-  mtproto: {
-    apiId: mtprotoApiId,
-    apiHash: mtprotoApiHash
-  },
   assets: {
     supergroupVideo,
     groupIdImage,
