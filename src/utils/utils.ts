@@ -67,10 +67,10 @@ const createPollText = async (
   });
 
   poll.options.forEach((option) => {
-    newPollText += `${option}\n${
+    newPollText += `${option}\n▫️${
       pollResult.data[option] > 0
         ? ((pollResult.data[option] / allVotes) * 100).toFixed(2)
-        : "▫️0"
+        : "0"
     }%\n\n`;
   });
 
