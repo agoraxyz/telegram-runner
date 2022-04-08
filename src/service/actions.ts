@@ -163,18 +163,11 @@ const voteAction = async (ctx: any): Promise<void> => {
   }
 };
 
-const createGroup = async (title: string) => {
-  logger.verbose(`createGroup ${title}`);
-
-  return -1;
-};
-
 export {
   confirmLeaveCommunityAction,
   confirmedLeaveCommunityAction,
   pickRequirementAction,
   listVotersAction,
   updateResultAction,
-  voteAction,
-  createGroup
+  voteAction
 };
