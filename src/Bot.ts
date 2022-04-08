@@ -43,6 +43,7 @@ export default class Bot {
 
     // event listeners
     bot.on("text", TGEvents.onMessage);
+    bot.on("channel_post", TGEvents.onChannelPost);
     bot.on("left_chat_member", TGEvents.onUserLeftGroup);
     bot.on("chat_member", TGEvents.onChatMemberUpdate);
     bot.on("my_chat_member", TGEvents.onMyChatMemberUpdate);
@@ -67,6 +68,8 @@ export default class Bot {
         "chat_member",
         "my_chat_member",
         "message",
+        "channel_post",
+        "chosen_inline_result",
         "callback_query"
       ]
     });

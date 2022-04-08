@@ -44,17 +44,118 @@ const logAxiosResponse = (res: AxiosResponse<any>) => {
 const extractBackendErrorMessage = (error: any) =>
   error.response?.data?.errors[0]?.msg;
 
+const sendPollTokenPicker = async (
+  ctx: any,
+  platformUserId: number,
+  guildId: number
+): Promise<void> => {
+  const guildRes = await axios.get(`${config.backendUrl}/guild/${guildId}`);
+
+  if (!guildRes) {
+    ctx.reply("Something went wrong. Please try again or contact us.");
+    return;
+  }
+
+  const requirements = guildRes.data.roles[0].requirements.filter(
+    (requirement) => requirement.type === "ERC20"
+  );
+
+  if (requirements.length === 0) {
+    await Bot.Client.sendMessage(
+      platformUserId,
+      "Your guild has no requirement with an appropriate token standard." +
+        "Weighted polls only support ERC20."
+    );
+    return;
+  }
+
+  const tokenButtons = requirements.map((requirement) => {
+    const { name, chain, address, id } = requirement;
+
+    return [
+      {
+        text: `${name}-${chain}-${address}`,
+        callback_data: `${name}-${chain};${id};PickRequirement`
+      }
+    ];
+  });
+
+  await Bot.Client.sendMessage(
+    platformUserId,
+    "Let's start creating your poll. You can use /reset or /cancel to restart or stop the process at any time.\n\n" +
+      "First, please choose a token as the base of the weighted vote.",
+    {
+      reply_markup: {
+        inline_keyboard: tokenButtons
+      }
+    }
+  );
+};
+
+const initPoll = async (
+  ctx,
+  platformUserId,
+  chatId: string | number
+): Promise<void> => {
+  try {
+    const chatMember = await Bot.Client.getChatMember(chatId, platformUserId);
+    const memberStatus = chatMember.status;
+
+    const guildIdRes = await axios.get(
+      `${config.backendUrl}/guild/platformId/${chatId}`
+    );
+
+    logAxiosResponse(guildIdRes);
+
+    if (!guildIdRes) {
+      ctx.reply("Please use this command in a guild.");
+      return;
+    }
+
+    if (!(memberStatus === "creator" || memberStatus === "administrator")) {
+      ctx.reply("You are not an admin.");
+      return;
+    }
+
+    await sendPollTokenPicker(ctx, platformUserId, guildIdRes.data.id);
+
+    const userStep = pollStorage.getUserStep(platformUserId);
+
+    if (userStep) {
+      pollStorage.deleteMemory(platformUserId);
+    }
+
+    pollStorage.initPoll(platformUserId, chatId.toString());
+    pollStorage.setUserStep(platformUserId, 1);
+
+    if (!chatMember) {
+      ctx.reply("Check your private messages!");
+    } else {
+      const { username, first_name } = chatMember.user;
+
+      if (!username) {
+        ctx.replyWithMarkdown(
+          `[${first_name}](tg://user?id=${platformUserId}) check your private messages!`
+        );
+      } else {
+        ctx.reply(`@${username} check your private messages!`);
+      }
+    }
+  } catch (err) {
+    logger.error(err);
+  }
+};
+
 const createPollText = async (
   poll: Poll,
   chatId: number | string
 ): Promise<string> => {
+  const { id, question, options, expDate } = poll;
   let allVotes = 0;
   let numOfVoters = 0;
-  let newPollText = `${poll.question}\n\n`;
+  let newPollText = `Poll #${id}: ${question}\n\n`;
 
-  const pollResult = await axios.get(
-    `${config.backendUrl}/poll/result/${poll.id}`
-  );
+  const pollResult = await axios.get(`${config.backendUrl}/poll/result/${id}`);
 
   logAxiosResponse(pollResult);
 
@@ -62,11 +163,11 @@ const createPollText = async (
     throw new Error("Poll query failed for counting result.");
   }
 
-  poll.options.forEach((option: string) => {
+  options.forEach((option: string) => {
     allVotes += pollResult.data[option];
   });
 
-  poll.options.forEach((option) => {
+  options.forEach((option) => {
     newPollText += `${option}\n▫️${
       pollResult.data[option] > 0
         ? ((pollResult.data[option] / allVotes) * 100).toFixed(2)
@@ -75,7 +176,7 @@ const createPollText = async (
   });
 
   const votersResponse = await axios.get(
-    `${config.backendUrl}/poll/voters/${poll.id}`
+    `${config.backendUrl}/poll/voters/${id}`
   );
 
   logAxiosResponse(votersResponse);
@@ -88,20 +189,22 @@ const createPollText = async (
     [k: string]: UserVote[];
   } = votersResponse.data;
 
-  poll.options.forEach((option: string) => {
+  options.forEach((option: string) => {
     numOfVoters += votesByOption[option].length;
   });
 
   newPollText = newPollText.concat(
-    `👥[${numOfVoters} person](https://t.me/${config.botUsername}?start=voters_${poll.id}_${chatId}) voted so far.`
+    `👥[${numOfVoters} person${numOfVoters === 1 ? "" : "s"}](https://t.me/${
+      config.botUsername
+    }?start=voters_${id}_${chatId}) voted so far.`
   );
 
-  if (dayjs().isAfter(dayjs.unix(poll.expDate))) {
+  if (dayjs().isAfter(dayjs.unix(expDate))) {
     newPollText = newPollText.concat("\n\nPoll has already ended.");
   } else {
     newPollText = newPollText.concat(
       `\n\nPoll ends on ${dayjs
-        .unix(poll.expDate)
+        .unix(expDate)
         .utc()
         .format("YYYY-MM-DD HH:mm UTC")}`
     );
@@ -241,53 +344,6 @@ const pollBuildResponse = async (userId: string): Promise<boolean> => {
   return false;
 };
 
-const sendPollTokenPicker = async (
-  ctx: any,
-  guildId: number
-): Promise<void> => {
-  const guildRes = await axios.get(`${config.backendUrl}/guild/${guildId}`);
-
-  if (!guildRes) {
-    ctx.reply("Something went wrong. Please try again or contact us.");
-    return;
-  }
-
-  const requirements = guildRes.data.roles[0].requirements.filter(
-    (requirement) => requirement.type === "ERC20"
-  );
-
-  if (requirements.length === 0) {
-    await Bot.Client.sendMessage(
-      ctx.message.from.id,
-      "Your guild has no requirement with an appropriate token standard." +
-        "Weighted polls only support ERC20."
-    );
-    return;
-  }
-
-  const tokenButtons = requirements.map((requirement) => {
-    const { name, chain, address, id } = requirement;
-
-    return [
-      {
-        text: `${name}-${chain}-${address}`,
-        callback_data: `${name}-${chain};${id};PickRequirement`
-      }
-    ];
-  });
-
-  await Bot.Client.sendMessage(
-    ctx.message.from.id,
-    "Let's start creating your poll. You can use /reset or /cancel to restart or stop the process at any time.\n\n" +
-      "First, please choose a token as the base of the weighted vote.",
-    {
-      reply_markup: {
-        inline_keyboard: tokenButtons
-      }
-    }
-  );
-};
-
 const updatePollTexts = async (
   pollText: string,
   newPollText: string,
@@ -375,6 +431,7 @@ export {
   getErrorResult,
   logAxiosResponse,
   extractBackendErrorMessage,
+  initPoll,
   createPollText,
   createVoteListText,
   pollBuildResponse,

@@ -12,19 +12,22 @@ import {
 } from "./common";
 import config from "../config";
 import logger from "../utils/logger";
-import { logAxiosResponse } from "../utils/utils";
+import { initPoll, logAxiosResponse } from "../utils/utils";
 import pollStorage from "./pollStorage";
 
-const onMessage = async (ctx: any): Promise<void> => {
-  if (ctx.update.message.chat.type === "private") {
+const onMessage = async (ctx: NarrowedContext<Context, any>): Promise<void> => {
+  const msg = ctx.update.message;
+
+  if (msg.chat.type === "private") {
     try {
-      const userId = ctx.update.message.from.id;
+      const userId = msg.from.id;
       const step = pollStorage.getUserStep(userId);
-      const messageText = ctx.update.message.text.trim();
+      const messageText = msg.text.trim();
 
       if (step === 2) {
         pollStorage.savePollQuestion(userId, messageText);
         pollStorage.setUserStep(userId, 3);
+
         await Bot.Client.sendMessage(
           userId,
           'Now send me the duration of your poll in DD:HH:mm format. For example if you want your poll to be active for 1.5 hours, you should send "0:1:30" or "00:01:30".'
@@ -33,6 +36,7 @@ const onMessage = async (ctx: any): Promise<void> => {
         const dateRegex =
           /([1-9][0-9]*|[0-9]):([0-1][0-9]|[0-9]|[2][0-4]):([0-5][0-9]|[0-9])/;
         const found = messageText.match(dateRegex);
+
         if (!found) {
           await Bot.Client.sendMessage(
             userId,
@@ -40,15 +44,19 @@ const onMessage = async (ctx: any): Promise<void> => {
           );
           return;
         }
+
         const date = found[0];
+
         pollStorage.savePollExpDate(userId, date);
         pollStorage.setUserStep(userId, 4);
+
         await Bot.Client.sendMessage(
           userId,
           "Now send me the first option of your poll."
         );
       } else if (step >= 4) {
         const optionSaved = pollStorage.savePollOption(userId, messageText);
+
         if (!optionSaved) {
           await Bot.Client.sendMessage(
             userId,
@@ -56,6 +64,7 @@ const onMessage = async (ctx: any): Promise<void> => {
           );
           return;
         }
+
         if (step === 4) {
           await Bot.Client.sendMessage(
             userId,
@@ -78,6 +87,17 @@ const onMessage = async (ctx: any): Promise<void> => {
       logger.error(err);
     }
   }
+};
+
+const onChannelPost = async (
+  ctx: NarrowedContext<Context, Update.ChannelPostUpdate>
+): Promise<void> => {
+  const channelId = ctx.update.channel_post.chat.id;
+  const creatorId = (await Bot.Client.getChatAdministrators(channelId))
+    .filter((admin) => admin.status === "creator")
+    .map((admin) => admin.user.id)[0];
+
+  await initPoll(ctx, creatorId, channelId);
 };
 
 const onUserJoined = async (
@@ -121,28 +141,13 @@ const onUserRemoved = async (
   }
 };
 
-const onBlocked = async (ctx: any): Promise<void> => {
-  const platformUserId = ctx.update.my_chat_member.from.id;
+const onUserLeftGroup = async (
+  ctx: NarrowedContext<Context, any>
+): Promise<void> => {
+  const msg = ctx.update.message;
 
-  logger.verbose(`User "${platformUserId}" has blocked the bot.`);
-
-  try {
-    const communities = await fetchCommunitiesOfUser(platformUserId);
-
-    communities.forEach((community) =>
-      leaveCommunity(platformUserId, community.id)
-    );
-  } catch (err) {
-    logger.error(err);
-  }
-};
-
-const onUserLeftGroup = async (ctx: any): Promise<void> => {
-  if (ctx.update.message.left_chat_member.id) {
-    await onUserRemoved(
-      ctx.update.message.left_chat_member.id,
-      ctx.update.message.chat.id
-    );
+  if (msg.left_chat_member.id) {
+    await onUserRemoved(msg.left_chat_member.id, msg.chat.id);
   }
 };
 
@@ -172,7 +177,27 @@ const onChatMemberUpdate = async (
   }
 };
 
-const onMyChatMemberUpdate = async (ctx: any): Promise<void> => {
+const onBlocked = async (
+  ctx: NarrowedContext<Context, Update.MyChatMemberUpdate>
+): Promise<void> => {
+  const platformUserId = ctx.update.my_chat_member.from.id;
+
+  logger.verbose(`User "${platformUserId}" has blocked the bot.`);
+
+  try {
+    const communities = await fetchCommunitiesOfUser(platformUserId);
+
+    communities.forEach((community) =>
+      leaveCommunity(platformUserId, community.id)
+    );
+  } catch (err) {
+    logger.error(err);
+  }
+};
+
+const onMyChatMemberUpdate = async (
+  ctx: NarrowedContext<Context, Update.MyChatMemberUpdate>
+): Promise<void> => {
   try {
     if (ctx.update.my_chat_member.new_chat_member?.status === "kicked") {
       onBlocked(ctx);
@@ -200,11 +225,12 @@ const onMyChatMemberUpdate = async (ctx: any): Promise<void> => {
 };
 
 export {
-  onChatMemberUpdate,
-  onMyChatMemberUpdate,
+  onMessage,
+  onChannelPost,
   onUserJoined,
   onUserLeftGroup,
   onUserRemoved,
-  onBlocked,
-  onMessage
+  onChatMemberUpdate,
+  onMyChatMemberUpdate,
+  onBlocked
 };
