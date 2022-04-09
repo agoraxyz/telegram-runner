@@ -338,13 +338,13 @@ const doneCommand = async (ctx: Ctx): Promise<void> => {
 
     const storedPoll: Poll = res.data;
 
-    let pollText = `Poll #${storedPoll.id}: ${poll.question}\n\n`;
+    const titleText = `Poll #${storedPoll.id}: ${poll.question}`;
 
-    const adminMessage = await Bot.Client.sendMessage(userId, pollText);
+    const adminMessage = await Bot.Client.sendMessage(userId, titleText);
 
-    poll.options.forEach((option) => {
-      pollText += `${option}\n▫️0%\n\n`;
-    });
+    const optionsText = poll.options
+      .map((option) => `${option}\n▫️0%`)
+      .join("\n\n");
 
     const voteButtonRow: { text: string; callback_data: string }[][] =
       poll.options.map((option) => [
@@ -354,9 +354,8 @@ const doneCommand = async (ctx: Ctx): Promise<void> => {
         }
       ]);
 
-    pollText += `👥 0 persons voted so far.`;
-
-    pollText += `\n\nPoll ends on ${dayjs
+    const votersText = `👥 0 persons voted so far.`;
+    const dateText = `Poll ends on ${dayjs
       .unix(expDate)
       .utc()
       .format("YYYY-MM-DD HH:mm UTC")}`;
@@ -368,8 +367,8 @@ const doneCommand = async (ctx: Ctx): Promise<void> => {
     };
 
     const message = await Bot.Client.sendMessage(
-      "-1001668871140",
-      pollText,
+      poll.chatId,
+      `${titleText}\n\n${optionsText}\n\n${votersText}\n\n${dateText}`,
       inlineKeyboard
     );
 
@@ -387,7 +386,7 @@ const doneCommand = async (ctx: Ctx): Promise<void> => {
       userId,
       adminMessage.message_id,
       undefined,
-      pollText,
+      message.text,
       {
         reply_markup: {
           inline_keyboard: [[listVotersButton, updateResultButton]]

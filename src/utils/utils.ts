@@ -93,7 +93,7 @@ const sendPollTokenPicker = async (
 };
 
 const initPoll = async (ctx): Promise<void> => {
-  const {update} = ctx;
+  const { update } = ctx;
 
   let chatId: number;
   let platformUserId;
@@ -144,19 +144,18 @@ const initPoll = async (ctx): Promise<void> => {
 
     if (update.channel_post) {
       return;
-    } if (!chatMember) {
+    }
+    if (!chatMember) {
       return await ctx.reply("Check your private messages!");
-    } 
-      const { username, first_name } = chatMember.user;
+    }
+    const { username, first_name } = chatMember.user;
 
-      if (!username) {
-        return await ctx.replyWithMarkdown(
-          `[${first_name}](tg://user?id=${platformUserId}) check your private messages!`
-        );
-      } 
-        return await ctx.reply(`@${username} check your private messages!`);
-      
-    
+    if (!username) {
+      return await ctx.replyWithMarkdown(
+        `[${first_name}](tg://user?id=${platformUserId}) check your private messages!`
+      );
+    }
+    return await ctx.reply(`@${username} check your private messages!`);
   } catch (err) {
     logger.error(err);
   }
@@ -167,10 +166,7 @@ const createPollText = async (
   chatId: number | string
 ): Promise<string> => {
   const { id, question, options, expDate } = poll;
-  let allVotes = 0;
-  let numOfVoters = 0;
-  let newPollText = `Poll #${id}: ${question}\n\n`;
-
+  const titleText = `Poll #${id}: ${question}\n\n`;
   const pollResult = await axios.get(`${config.backendUrl}/poll/result/${id}`);
 
   logAxiosResponse(pollResult);
@@ -179,17 +175,20 @@ const createPollText = async (
     throw new Error("Poll query failed for counting result.");
   }
 
-  options.forEach((option: string) => {
-    allVotes += pollResult.data[option];
-  });
+  const allVotes = poll.options
+    .map((option) => pollResult.data[option])
+    .reduce((a, b) => a + b);
 
-  options.forEach((option) => {
-    newPollText += `${option}\n▫️${
-      pollResult.data[option] > 0
-        ? ((pollResult.data[option] / allVotes) * 100).toFixed(2)
-        : "0"
-    }%\n\n`;
-  });
+  const optionsText = poll.options
+    .map(
+      (option) =>
+        `${option}\n▫️${
+          pollResult.data[option] > 0
+            ? ((pollResult.data[option] / allVotes) * 100).toFixed(2)
+            : "0"
+        }%`
+    )
+    .join("\n\n");
 
   const votersResponse = await axios.get(
     `${config.backendUrl}/poll/voters/${id}`
@@ -205,28 +204,24 @@ const createPollText = async (
     [k: string]: UserVote[];
   } = votersResponse.data;
 
-  options.forEach((option: string) => {
-    numOfVoters += votesByOption[option].length;
-  });
+  const numOfVoters = options
+    .map((option) => votesByOption[option].length)
+    .reduce((a, b) => a + b);
 
-  newPollText = newPollText.concat(
-    `👥[${numOfVoters} person${numOfVoters === 1 ? "" : "s"}](https://t.me/${
-      config.botUsername
-    }?start=voters_${id}_${chatId}) voted so far.`
-  );
+  const votersText = `👥[${numOfVoters} person${
+    numOfVoters === 1 ? "" : "s"
+  }](https://t.me/${
+    config.botUsername
+  }?start=voters_${id}_${chatId}) voted so far.`;
 
-  if (dayjs().isAfter(dayjs.unix(expDate))) {
-    newPollText = newPollText.concat("\n\nPoll has already ended.");
-  } else {
-    newPollText = newPollText.concat(
-      `\n\nPoll ends on ${dayjs
+  const dateText = dayjs().isAfter(dayjs.unix(expDate))
+    ? "Poll has already ended."
+    : `Poll ends on ${dayjs
         .unix(expDate)
         .utc()
-        .format("YYYY-MM-DD HH:mm UTC")}`
-    );
-  }
+        .format("YYYY-MM-DD HH:mm UTC")}`;
 
-  return newPollText;
+  return `${titleText}\n\n${optionsText}\n\n${votersText}\n\n${dateText}`;
 };
 
 const createVoteListText = async (
@@ -234,9 +229,6 @@ const createVoteListText = async (
   poll: Poll,
   showBalance: boolean = true
 ): Promise<string> => {
-  let allVotes: number = 0;
-  let pollText: string = "Results:\n";
-
   const pollResult = await axios.get(
     `${config.backendUrl}/poll/result/${poll.id}`
   );
@@ -257,9 +249,9 @@ const createVoteListText = async (
     throw new Error("Failed to query user votes.");
   }
 
-  poll.options.forEach((option: string) => {
-    allVotes += pollResult.data[option];
-  });
+  const allVotes = poll.options
+    .map((option) => pollResult.data[option])
+    .reduce((a, b) => a + b);
 
   const optionVotes: {
     [k: string]: string[];
@@ -295,19 +287,18 @@ const createVoteListText = async (
     })
   );
 
-  poll.options.forEach((option: string) => {
-    pollText += `\n▫️ ${option} - `;
+  const pollResults = poll.options
+    .map((option) => {
+      const percentage =
+        pollResult.data[option] > 0
+          ? ((pollResult.data[option] / allVotes) * 100).toFixed(2)
+          : 0;
 
-    pollText += `${
-      pollResult.data[option] > 0
-        ? ((pollResult.data[option] / allVotes) * 100).toFixed(2)
-        : 0
-    }%\n`;
+      return `▫️ ${option} - ${percentage}%\n${optionVotes[option].join("")}`;
+    })
+    .join("\n");
 
-    pollText += optionVotes[option].join("");
-  });
-
-  return pollText;
+  return `Results\n\n${pollResults}`;
 };
 
 const pollBuildResponse = async (userId: number): Promise<boolean> => {
@@ -375,7 +366,6 @@ const updatePollTexts = async (
     }
 
     if (dayjs().isAfter(dayjs.unix(poll.expDate))) {
-      // Delete buttons
       await Bot.Client.editMessageText(
         adminId,
         adminMessageId,

@@ -227,7 +227,7 @@ const onBlocked = async (
   try {
     const communities = await fetchCommunitiesOfUser(platformUserId);
 
-    communities.forEach((community) =>
+    communities.map(async (community) =>
       leaveCommunity(platformUserId, community.id)
     );
   } catch (err) {
