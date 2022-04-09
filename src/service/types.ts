@@ -1,4 +1,7 @@
-export type Poll = {
+import { Context, NarrowedContext } from "telegraf";
+import { Message, Update } from "typegram";
+
+type Poll = {
   id: number;
   question: string;
   startDate: number;
@@ -7,7 +10,17 @@ export type Poll = {
   roleId: number;
 };
 
-export type UserVote = {
+type UserVote = {
   tgId: string;
   balance: number;
 };
+
+type Ctx = NarrowedContext<
+  Context,
+  {
+    message: Update.New & Update.NonChannel & Message.TextMessage;
+    update_id: number;
+  }
+> & { startPayload?: string };
+
+export { Poll, UserVote, Ctx };
