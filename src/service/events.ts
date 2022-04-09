@@ -15,8 +15,14 @@ import logger from "../utils/logger";
 import { initPoll, logAxiosResponse } from "../utils/utils";
 import pollStorage from "./pollStorage";
 
-const onMessage = async (ctx: NarrowedContext<Context, any>): Promise<void> => {
-  const msg = ctx.update.message;
+const onMessage = async (
+  ctx: NarrowedContext<Context, Update.MessageUpdate>
+): Promise<void> => {
+  const msg = ctx.update.message as {
+    chat: { id: number; type: string };
+    from: { id: number };
+    text: string;
+  };
 
   if (msg.chat.type === "private") {
     try {
@@ -30,7 +36,8 @@ const onMessage = async (ctx: NarrowedContext<Context, any>): Promise<void> => {
 
         await Bot.Client.sendMessage(
           userId,
-          'Now send me the duration of your poll in DD:HH:mm format. For example if you want your poll to be active for 1.5 hours, you should send "0:1:30" or "00:01:30".'
+          "Now please send me the duration of your poll in DD:HH:mm format.\n" +
+            'For example if you want your poll to be active for 1.5 hours, you should send "0:1:30" or "00:01:30".'
         );
       } else if (step === 3) {
         const dateRegex =
@@ -101,11 +108,8 @@ const onChannelPost = async (
 
   switch (post.text) {
     case "/poll": {
-      const creatorId = (await Bot.Client.getChatAdministrators(channelId))
-        .filter((admin) => admin.status === "creator")
-        .map((admin) => admin.user.id)[0];
-
-      await initPoll(ctx, creatorId, channelId);
+      await initPoll(ctx);
+      await Bot.Client.deleteMessage(channelId, post.message_id);
 
       break;
     }
