@@ -27,14 +27,13 @@ const confirmLeaveCommunityAction = (ctx: any): void => {
   );
 };
 
-const confirmedLeaveCommunityAction = (ctx: any): void => {
+const confirmedLeaveCommunityAction = (ctx: any): Promise<void> =>
   leaveCommunity(
     ctx.update.callback_query.from.id,
     ctx.match[0].split("leave_confirmed_")[1]
   );
-};
 
-const pickRequirementAction = async (ctx: any): Promise<void> => {
+const chooseRequirementAction = async (ctx: any): Promise<void> => {
   try {
     const { message: msg, data } = ctx.update.callback_query;
     /* prettier-ignore */
@@ -63,19 +62,16 @@ const pickRequirementAction = async (ctx: any): Promise<void> => {
 
 const listVotersAction = async (ctx: any): Promise<void> => {
   try {
-    const [chatId, pollId] = ctx.update.callback_query.data.split(";");
+    const { data, from } = ctx.update.callback_query;
+    const [chatId, pollId] = data.split(";");
 
     const pollResponse = await axios.get(`${config.backendUrl}/poll/${pollId}`);
+
     logAxiosResponse(pollResponse);
 
-    const poll = pollResponse.data;
+    const responseText = await createVoteListText(chatId, pollResponse.data);
 
-    const responseText = await createVoteListText(chatId, poll);
-
-    await Bot.Client.sendMessage(
-      ctx.update.callback_query.from.id,
-      responseText
-    );
+    await Bot.Client.sendMessage(from.id, responseText);
   } catch (err) {
     logger.error(err);
   }
@@ -83,15 +79,17 @@ const listVotersAction = async (ctx: any): Promise<void> => {
 
 const updateResultAction = async (ctx: any): Promise<void> => {
   try {
-    const pollText = ctx.update.callback_query.message.text;
-    const data: string[] = ctx.update.callback_query.data.split(";");
+    const { message: msg, data: cbData } = ctx.update.callback_query;
+    const pollText = msg.text;
+    const data = cbData.split(";");
     const pollId = data[1];
     const [chatId, pollMessageId] = data[0].split(":");
-    const adminId = ctx.update.callback_query.message.chat.id;
-    const adminMessageId = ctx.update.callback_query.message.message_id;
+    const adminId = msg.chat.id;
+    const adminMessageId = msg.message_id;
     const pollResponse = await axios.get(`${config.backendUrl}/poll/${pollId}`);
 
     logAxiosResponse(pollResponse);
+
     if (pollResponse.data.length === 0) {
       return;
     }
@@ -115,17 +113,11 @@ const updateResultAction = async (ctx: any): Promise<void> => {
 
 const voteAction = async (ctx: any): Promise<void> => {
   try {
-    const pollText = ctx.update.callback_query.message.text;
-    const data: string[] = ctx.update.callback_query.data.split(";");
-    data.pop();
-    const adminInfo = data.pop().split(":");
-    const [adminId] = adminInfo.map((adminData) => Number(adminData));
-    const adminMessageId = parseInt(adminInfo[1], 10);
-    const pollId = data.pop();
-    const chatId = ctx.update.callback_query.message.chat.id;
-    const pollMessageId = ctx.update.callback_query.message.message_id;
-    const platformUserId = ctx.update.callback_query.from.id;
-    const voterOption = data.join(";");
+    const { message: msg, data, from } = ctx.update.callback_query;
+    const pollText = msg.text;
+    const [option, pollId, adminInfo] = data.split(";");
+    const [adminId, adminMessageId] = adminInfo.split(":");
+    const chatId = msg.chat.id;
     const pollResponse = await axios.get(`${config.backendUrl}/poll/${pollId}`);
 
     logAxiosResponse(pollResponse);
@@ -138,9 +130,10 @@ const voteAction = async (ctx: any): Promise<void> => {
 
     if (dayjs().isBefore(dayjs.unix(poll.expDate))) {
       const voteResponse = await axios.post(`${config.backendUrl}/poll/vote`, {
+        platform: config.platform,
         pollId,
-        platformUserId,
-        option: voterOption
+        platformUserId: from.id,
+        optionIndex: poll.options.indexOf(option)
       });
 
       logAxiosResponse(voteResponse);
@@ -153,9 +146,9 @@ const voteAction = async (ctx: any): Promise<void> => {
       newPollText,
       poll,
       chatId,
-      pollMessageId,
-      adminId,
-      adminMessageId
+      msg.message_id,
+      parseInt(adminId, 10),
+      parseInt(adminMessageId, 10)
     );
   } catch (err) {
     logger.error(err);
@@ -165,7 +158,7 @@ const voteAction = async (ctx: any): Promise<void> => {
 export {
   confirmLeaveCommunityAction,
   confirmedLeaveCommunityAction,
-  pickRequirementAction,
+  chooseRequirementAction,
   listVotersAction,
   updateResultAction,
   voteAction

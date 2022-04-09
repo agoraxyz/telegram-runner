@@ -44,7 +44,7 @@ const logAxiosResponse = (res: AxiosResponse<any>) => {
 const extractBackendErrorMessage = (error: any) =>
   error.response?.data?.errors[0]?.msg;
 
-const sendPollTokenPicker = async (
+const sendPollTokenChooser = async (
   ctx: any,
   platformUserId: number,
   guildId: number
@@ -75,7 +75,7 @@ const sendPollTokenPicker = async (
     return [
       {
         text: `${name}-${chain}-${address}`,
-        callback_data: `${name}-${chain};${id};PickRequirement`
+        callback_data: `${name}-${chain};${id};ChooseRequirement`
       }
     ];
   });
@@ -107,8 +107,8 @@ const initPoll = async (ctx): Promise<void> => {
 
     platformUserId = String(creatorId);
   } else {
-    chatId = update.chat.id;
-    platformUserId = update.from.id;
+    chatId = update.message.chat.id;
+    platformUserId = update.message.from.id;
   }
 
   try {
@@ -131,7 +131,7 @@ const initPoll = async (ctx): Promise<void> => {
       return;
     }
 
-    await sendPollTokenPicker(ctx, platformUserId, guildIdRes.data.id);
+    await sendPollTokenChooser(ctx, platformUserId, guildIdRes.data.id);
 
     const userStep = pollStorage.getUserStep(platformUserId);
 
@@ -145,9 +145,11 @@ const initPoll = async (ctx): Promise<void> => {
     if (update.channel_post) {
       return;
     }
+
     if (!chatMember) {
       return await ctx.reply("Check your private messages!");
     }
+
     const { username, first_name } = chatMember.user;
 
     if (!username) {
@@ -155,6 +157,7 @@ const initPoll = async (ctx): Promise<void> => {
         `[${first_name}](tg://user?id=${platformUserId}) check your private messages!`
       );
     }
+
     return await ctx.reply(`@${username} check your private messages!`);
   } catch (err) {
     logger.error(err);
@@ -166,29 +169,6 @@ const createPollText = async (
   chatId: number | string
 ): Promise<string> => {
   const { id, question, options, expDate } = poll;
-  const titleText = `Poll #${id}: ${question}\n\n`;
-  const pollResult = await axios.get(`${config.backendUrl}/poll/result/${id}`);
-
-  logAxiosResponse(pollResult);
-
-  if (pollResult.data.length === 0) {
-    throw new Error("Poll query failed for counting result.");
-  }
-
-  const allVotes = poll.options
-    .map((option) => pollResult.data[option])
-    .reduce((a, b) => a + b);
-
-  const optionsText = poll.options
-    .map(
-      (option) =>
-        `${option}\n▫️${
-          pollResult.data[option] > 0
-            ? ((pollResult.data[option] / allVotes) * 100).toFixed(2)
-            : "0"
-        }%`
-    )
-    .join("\n\n");
 
   const votersResponse = await axios.get(
     `${config.backendUrl}/poll/voters/${id}`
@@ -196,17 +176,34 @@ const createPollText = async (
 
   logAxiosResponse(votersResponse);
 
-  if (votersResponse.data.length === 0) {
-    throw new Error("Failed to query user votes.");
-  }
-
   const votesByOption: {
-    [k: string]: UserVote[];
+    [k: number]: UserVote[];
   } = votersResponse.data;
 
+  const votesForEachOption = poll.options.map((_, idx) =>
+    votesByOption[idx].length
+      ? votesByOption[idx].map((vote) => vote.balance).reduce((a, b) => a + b)
+      : 0
+  );
+
+  const allVotes = votesForEachOption.reduce((a, b) => a + b);
+
   const numOfVoters = options
-    .map((option) => votesByOption[option].length)
+    .map((_, idx) => votesByOption[idx].length)
     .reduce((a, b) => a + b);
+
+  const titleText = `Poll #${id}: ${question}`;
+
+  const optionsText = poll.options
+    .map(
+      (option, idx) =>
+        `${option}\n▫️${
+          votesByOption[idx].length > 0
+            ? ((votesForEachOption[idx] / allVotes) * 100).toFixed(2)
+            : 0
+        }%`
+    )
+    .join("\n\n");
 
   const votersText = `👥[${numOfVoters} person${
     numOfVoters === 1 ? "" : "s"
@@ -229,58 +226,51 @@ const createVoteListText = async (
   poll: Poll,
   showBalance: boolean = true
 ): Promise<string> => {
-  const pollResult = await axios.get(
-    `${config.backendUrl}/poll/result/${poll.id}`
-  );
-
-  logAxiosResponse(pollResult);
-
-  if (pollResult.data.length === 0) {
-    throw new Error("Poll query failed for listing votes.");
-  }
-
   const votersResponse = await axios.get(
     `${config.backendUrl}/poll/voters/${poll.id}`
   );
 
   logAxiosResponse(votersResponse);
 
-  if (votersResponse.data.length === 0) {
-    throw new Error("Failed to query user votes.");
-  }
-
-  const allVotes = poll.options
-    .map((option) => pollResult.data[option])
-    .reduce((a, b) => a + b);
-
-  const optionVotes: {
-    [k: string]: string[];
-  } = Object.fromEntries(poll.options.map((option) => [option, []]));
-
   const votesByOption: {
-    [k: string]: UserVote[];
+    [k: number]: UserVote[];
   } = votersResponse.data;
 
+  const votesForEachOption = poll.options.map((_, idx) =>
+    votesByOption[idx].length
+      ? votesByOption[idx].map((vote) => vote.balance).reduce((a, b) => a + b)
+      : 0
+  );
+
+  const allVotes = votesForEachOption.reduce((a, b) => a + b);
+
+  const voters: {
+    [k: number]: string[];
+  } = Object.fromEntries(poll.options.map((_, idx) => [idx, []]));
+
   await Promise.all(
-    poll.options.map(async (option) => {
-      const votes = votesByOption[option];
+    poll.options.map(async (_, idx) => {
+      const votes = votesByOption[idx];
+
       await Promise.all(
         votes.map(async (vote) => {
           const chatMember = await Bot.Client.getChatMember(
             chatId,
             parseInt(vote.tgId, 10)
           );
+          const {
+            user: { first_name }
+          } = chatMember;
+          const { balance } = vote;
 
           if (showBalance) {
-            optionVotes[option].push(
+            voters[idx].push(
               chatMember
-                ? `${chatMember.user.first_name} ${vote.balance}\n`
-                : `Unknown_User ${vote.balance}\n`
+                ? `${first_name} ${balance.toFixed(2)}\n`
+                : `Unknown_User ${balance.toFixed(2)}\n`
             );
           } else {
-            optionVotes[option].push(
-              chatMember ? `${chatMember.user.first_name}\n` : `Unknown_User\n`
-            );
+            voters[idx].push(chatMember ? `${first_name}\n` : `Unknown_User\n`);
           }
         })
       );
@@ -288,17 +278,17 @@ const createVoteListText = async (
   );
 
   const pollResults = poll.options
-    .map((option) => {
+    .map((option, idx) => {
       const percentage =
-        pollResult.data[option] > 0
-          ? ((pollResult.data[option] / allVotes) * 100).toFixed(2)
+        votesByOption[idx].length > 0
+          ? ((votesForEachOption[idx] / allVotes) * 100).toFixed(2)
           : 0;
 
-      return `▫️ ${option} - ${percentage}%\n${optionVotes[option].join("")}`;
+      return `▫️ ${option} - ${percentage}%\n${voters[idx].join("")}`;
     })
     .join("\n");
 
-  return `Results\n\n${pollResults}`;
+  return `Results for poll #${poll.id}:\n\n${pollResults}`;
 };
 
 const pollBuildResponse = async (userId: number): Promise<boolean> => {
@@ -361,7 +351,7 @@ const updatePollTexts = async (
   adminMessageId: number
 ): Promise<void> => {
   try {
-    if (newPollText === pollText) {
+    if (newPollText.trim() === pollText.trim()) {
       return;
     }
 
@@ -441,6 +431,6 @@ export {
   createPollText,
   createVoteListText,
   pollBuildResponse,
-  sendPollTokenPicker,
+  sendPollTokenChooser,
   updatePollTexts
 };

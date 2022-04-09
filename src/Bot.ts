@@ -57,7 +57,7 @@ export default class Bot {
       /^leave_confirmed_[0-9]+$/,
       TGActions.confirmedLeaveCommunityAction
     );
-    bot.action(/;PickRequirement$/, TGActions.pickRequirementAction);
+    bot.action(/;ChooseRequirement$/, TGActions.chooseRequirementAction);
     bot.action(/;ListVoters$/, TGActions.listVotersAction);
     bot.action(/;UpdateResult$/, TGActions.updateResultAction);
     bot.action(/;Vote$/, TGActions.voteAction);

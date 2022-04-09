@@ -9,7 +9,7 @@ import { fetchCommunitiesOfUser, getGroupName } from "./common";
 import config from "../config";
 import logger from "../utils/logger";
 import {
-  sendPollTokenPicker,
+  sendPollTokenChooser,
   extractBackendErrorMessage,
   logAxiosResponse,
   pollBuildResponse,
@@ -441,7 +441,7 @@ const resetCommand = async (ctx: Ctx): Promise<void> => {
         "The poll building process has been reset."
       );
 
-      await sendPollTokenPicker(ctx, platformUserId, guildIdRes.data.id);
+      await sendPollTokenChooser(ctx, platformUserId, guildIdRes.data.id);
     }
   } catch (err) {
     logger.error(err);
