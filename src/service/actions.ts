@@ -36,26 +36,25 @@ const confirmedLeaveCommunityAction = (ctx: any): void => {
 
 const pickRequirementAction = async (ctx: any): Promise<void> => {
   try {
-    const [requrementInfo, requrementId] =
-      ctx.update.callback_query.data.split(";");
+    const { message: msg, data } = ctx.update.callback_query;
+    /* prettier-ignore */
+    const { message_id, chat: { id: chatId }} = msg;
+    const [requrementInfo, requrementId] = data.split(";");
 
-    pollStorage.saveReqId(
-      ctx.update.callback_query.message.chat.id,
-      requrementId
-    );
+    pollStorage.saveReqId(chatId, requrementId);
 
     await Bot.Client.editMessageText(
-      ctx.update.callback_query.from.id,
-      ctx.update.callback_query.message.message_id,
+      chatId,
+      message_id,
       undefined,
       `Your choosen token is:\n\n${requrementInfo}`
     );
 
-    pollStorage.setUserStep(ctx.update.callback_query.message.chat.id, 2);
+    pollStorage.setUserStep(chatId, 2);
 
     await Bot.Client.sendMessage(
-      ctx.update.callback_query.message.chat.id,
-      "Now, send me the question of your poll."
+      chatId,
+      "Now, please send me the question of your poll."
     );
   } catch (err) {
     logger.error(err);
@@ -120,7 +119,7 @@ const voteAction = async (ctx: any): Promise<void> => {
     const data: string[] = ctx.update.callback_query.data.split(";");
     data.pop();
     const adminInfo = data.pop().split(":");
-    const [adminId] = adminInfo;
+    const [adminId] = adminInfo.map((adminData) => Number(adminData));
     const adminMessageId = parseInt(adminInfo[1], 10);
     const pollId = data.pop();
     const chatId = ctx.update.callback_query.message.chat.id;

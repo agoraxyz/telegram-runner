@@ -92,11 +92,25 @@ const sendPollTokenPicker = async (
   );
 };
 
-const initPoll = async (
-  ctx,
-  platformUserId,
-  chatId: string | number
-): Promise<void> => {
+const initPoll = async (ctx): Promise<void> => {
+  const {update} = ctx;
+
+  let chatId: number;
+  let platformUserId;
+
+  if (update.channel_post) {
+    chatId = update.channel_post.chat.id;
+
+    const creatorId = (await Bot.Client.getChatAdministrators(chatId))
+      .filter((admin) => admin.status === "creator")
+      .map((admin) => admin.user.id)[0];
+
+    platformUserId = String(creatorId);
+  } else {
+    chatId = update.chat.id;
+    platformUserId = update.from.id;
+  }
+
   try {
     const chatMember = await Bot.Client.getChatMember(chatId, platformUserId);
     const memberStatus = chatMember.status;
@@ -128,19 +142,21 @@ const initPoll = async (
     pollStorage.initPoll(platformUserId, chatId.toString());
     pollStorage.setUserStep(platformUserId, 1);
 
-    if (!chatMember) {
-      ctx.reply("Check your private messages!");
-    } else {
+    if (update.channel_post) {
+      return;
+    } if (!chatMember) {
+      return await ctx.reply("Check your private messages!");
+    } 
       const { username, first_name } = chatMember.user;
 
       if (!username) {
-        ctx.replyWithMarkdown(
+        return await ctx.replyWithMarkdown(
           `[${first_name}](tg://user?id=${platformUserId}) check your private messages!`
         );
-      } else {
-        ctx.reply(`@${username} check your private messages!`);
-      }
-    }
+      } 
+        return await ctx.reply(`@${username} check your private messages!`);
+      
+    
   } catch (err) {
     logger.error(err);
   }
@@ -294,7 +310,7 @@ const createVoteListText = async (
   return pollText;
 };
 
-const pollBuildResponse = async (userId: string): Promise<boolean> => {
+const pollBuildResponse = async (userId: number): Promise<boolean> => {
   switch (pollStorage.getUserStep(userId)) {
     case undefined:
       await Bot.Client.sendMessage(
@@ -350,7 +366,7 @@ const updatePollTexts = async (
   poll: Poll,
   chatId: string,
   pollMessageId: string,
-  adminId: string,
+  adminId: number,
   adminMessageId: number
 ): Promise<void> => {
   try {
