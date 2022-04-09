@@ -1,6 +1,6 @@
 import axios, { AxiosResponse } from "axios";
-import { Context, Markup, NarrowedContext } from "telegraf";
-import { InlineKeyboardButton, Message, Update } from "typegram";
+import { Markup } from "telegraf";
+import { InlineKeyboardButton, Message } from "typegram";
 import dayjs from "dayjs";
 import { LevelInfo } from "../api/types";
 import Bot from "../Bot";
@@ -17,9 +17,9 @@ import {
   initPoll
 } from "../utils/utils";
 import pollStorage from "./pollStorage";
-import { Poll } from "./types";
+import { Ctx, Poll } from "./types";
 
-const helpCommand = (ctx: any): void => {
+const helpCommand = (ctx: Ctx): void => {
   const helpHeader =
     "Hello there! I'm the Guild bot.\n" +
     "I'm part of the [Guild](https://docs.guild.xyz/) project and " +
@@ -52,14 +52,6 @@ const helpCommand = (ctx: any): void => {
     disable_web_page_preview: true
   });
 };
-
-type Ctx = NarrowedContext<
-  Context,
-  {
-    message: Update.New & Update.NonChannel & Message.TextMessage;
-    update_id: number;
-  }
-> & { startPayload?: string };
 
 const startCommand = async (ctx: Ctx): Promise<void> => {
   const { message } = ctx;
@@ -177,7 +169,7 @@ const startCommand = async (ctx: Ctx): Promise<void> => {
   }
 };
 
-const leaveCommand = async (ctx: any): Promise<void> => {
+const leaveCommand = async (ctx: Ctx): Promise<void> => {
   try {
     const platformUserId = ctx.message.from.id;
 
@@ -209,7 +201,7 @@ const leaveCommand = async (ctx: any): Promise<void> => {
   }
 };
 
-const listCommunitiesCommand = async (ctx: any): Promise<void> => {
+const listCommunitiesCommand = async (ctx: Ctx): Promise<void> => {
   try {
     const results = await fetchCommunitiesOfUser(ctx.message.from.id);
 
@@ -224,7 +216,7 @@ const listCommunitiesCommand = async (ctx: any): Promise<void> => {
   }
 };
 
-const pingCommand = async (ctx: any): Promise<void> => {
+const pingCommand = async (ctx: Ctx): Promise<void> => {
   const { message } = ctx.update;
   const messageTime = new Date(message.date * 1000).getTime();
   const platformUserId = message.from.id;
@@ -246,7 +238,7 @@ const pingCommand = async (ctx: any): Promise<void> => {
   }
 };
 
-const statusUpdateCommand = async (ctx: any): Promise<void> => {
+const statusUpdateCommand = async (ctx: Ctx): Promise<void> => {
   const { message } = ctx.update;
   const platformUserId = message.from.id;
 
@@ -285,13 +277,13 @@ const statusUpdateCommand = async (ctx: any): Promise<void> => {
   }
 };
 
-const groupIdCommand = async (ctx: any): Promise<void> =>
-  ctx.reply(ctx.update.message.chat.id, {
+const groupIdCommand = async (ctx: Ctx): Promise<Message.TextMessage> =>
+  ctx.reply(String(ctx.update.message.chat.id), {
     reply_to_message_id: ctx.update.message.message_id
   });
 
-const addCommand = async (ctx: Ctx): Promise<void> => {
-  await ctx.replyWithMarkdown(
+const addCommand = async (ctx: Ctx): Promise<Message.TextMessage> =>
+  ctx.replyWithMarkdown(
     "Click to add Guild bot to your group",
     Markup.inlineKeyboard([
       Markup.button.url(
@@ -300,17 +292,10 @@ const addCommand = async (ctx: Ctx): Promise<void> => {
       )
     ])
   );
-};
 
-const pollCommand = async (ctx: any): Promise<void> => {
-  const msg = ctx.message;
-  const chatId = msg.chat.id;
-  const platformUserId = msg.from.id;
+const pollCommand = async (ctx: Ctx): Promise<void> => initPoll(ctx);
 
-  initPoll(ctx, platformUserId, chatId);
-};
-
-const doneCommand = async (ctx: any): Promise<void> => {
+const doneCommand = async (ctx: Ctx): Promise<void> => {
   const userId = ctx.message.from.id;
 
   try {
@@ -428,7 +413,7 @@ const doneCommand = async (ctx: any): Promise<void> => {
   }
 };
 
-const resetCommand = async (ctx: any): Promise<void> => {
+const resetCommand = async (ctx: Ctx): Promise<void> => {
   try {
     if (ctx.message.chat.type !== "private") {
       return;
@@ -464,7 +449,7 @@ const resetCommand = async (ctx: any): Promise<void> => {
   }
 };
 
-const cancelCommand = async (ctx: any): Promise<void> => {
+const cancelCommand = async (ctx: Ctx): Promise<void> => {
   try {
     if (ctx.message.chat.type !== "private") {
       return;
