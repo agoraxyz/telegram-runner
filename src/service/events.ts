@@ -92,12 +92,48 @@ const onMessage = async (ctx: NarrowedContext<Context, any>): Promise<void> => {
 const onChannelPost = async (
   ctx: NarrowedContext<Context, Update.ChannelPostUpdate>
 ): Promise<void> => {
-  const channelId = ctx.update.channel_post.chat.id;
-  const creatorId = (await Bot.Client.getChatAdministrators(channelId))
-    .filter((admin) => admin.status === "creator")
-    .map((admin) => admin.user.id)[0];
+  const post = ctx.update.channel_post as {
+    message_id: number;
+    chat: { id: number };
+    text: string;
+  };
+  const channelId = post.chat.id;
 
-  await initPoll(ctx, creatorId, channelId);
+  switch (post.text) {
+    case "/poll": {
+      const creatorId = (await Bot.Client.getChatAdministrators(channelId))
+        .filter((admin) => admin.status === "creator")
+        .map((admin) => admin.user.id)[0];
+
+      await initPoll(ctx, creatorId, channelId);
+
+      break;
+    }
+
+    case "/groupid": {
+      ctx.reply(
+        "You can only use this command in a group.\n" +
+          "Please use the /channelid command for groups",
+        {
+          reply_to_message_id: post.message_id
+        }
+      );
+
+      break;
+    }
+
+    case "/channelid": {
+      ctx.reply(String(channelId), {
+        reply_to_message_id: post.message_id
+      });
+
+      break;
+    }
+
+    default: {
+      break;
+    }
+  }
 };
 
 const onUserJoined = async (
