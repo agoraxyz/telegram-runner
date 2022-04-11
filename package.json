@@ -17,7 +17,7 @@
     "express": "^4.17.1",
     "express-validator": "^6.11.1",
     "telegraf": "^4.4.0",
-    "typegram": "^3.3.1",
+    "typegram": "^3.8.0",
     "winston": "^3.3.3"
   },
   "devDependencies": {
