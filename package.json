@@ -11,7 +11,7 @@
   "dependencies": {
     "@mtproto/core": "^6.0.1",
     "@types/redis": "^2.8.31",
-    "axios": "^0.21.1",
+    "axios": "^0.26.1",
     "dayjs": "^1.10.7",
     "dotenv": "^10.0.0",
     "express": "^4.17.1",
