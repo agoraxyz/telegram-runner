@@ -12,7 +12,7 @@ import {
 } from "./common";
 import config from "../config";
 import logger from "../utils/logger";
-import { initPoll, logAxiosResponse } from "../utils/utils";
+import { initPoll } from "../utils/utils";
 import pollStorage from "./pollStorage";
 
 const onMessage = async (
@@ -151,8 +151,6 @@ const onUserJoined = async (
       groupId
     });
 
-    logAxiosResponse(res);
-
     logger.debug(JSON.stringify(res.data));
   } catch (err) {
     logger.error(err);
@@ -172,8 +170,6 @@ const onUserRemoved = async (
         groupId
       }
     );
-
-    logAxiosResponse(res);
 
     logger.debug(JSON.stringify(res.data));
   } catch (err) {

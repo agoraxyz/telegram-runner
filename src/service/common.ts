@@ -3,7 +3,6 @@ import { CommunityResult } from "../api/types";
 import Bot from "../Bot";
 import config from "../config";
 import logger from "../utils/logger";
-import { logAxiosResponse } from "../utils/utils";
 
 const getGroupName = async (groupId: number): Promise<string> =>
   ((await Bot.Client.getChat(groupId)) as { title: string }).title;
@@ -18,8 +17,6 @@ const fetchCommunitiesOfUser = async (
   const res = await axios.get(
     `${config.backendUrl}/communities/${platformUserId}`
   );
-
-  logAxiosResponse(res);
 
   return (res.data as CommunityResult[]).filter(
     (community) => community.telegramIsMember
@@ -44,8 +41,6 @@ const leaveCommunity = async (
         triggerKick: true
       }
     );
-
-    logAxiosResponse(res);
 
     logger.debug(JSON.stringify(res.data));
   } catch (err) {
