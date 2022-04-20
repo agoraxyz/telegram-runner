@@ -35,10 +35,12 @@ const getErrorResult = (error: any): ErrorResult => {
   };
 };
 
-const logAxiosResponse = (res: AxiosResponse<any>) => {
+const logAxiosResponse = (res: AxiosResponse<any>): AxiosResponse<any> => {
   logger.verbose(
     `${res.status} ${res.statusText} data:${JSON.stringify(res.data)}`
   );
+
+  return res;
 };
 
 const extractBackendErrorMessage = (error: any) =>
@@ -119,8 +121,6 @@ const initPoll = async (ctx): Promise<void> => {
       `${config.backendUrl}/guild/platformId/${chatId}`
     );
 
-    logAxiosResponse(guildIdRes);
-
     if (!guildIdRes) {
       ctx.reply("Please use this command in a guild.");
       return;
@@ -166,59 +166,86 @@ const initPoll = async (ctx): Promise<void> => {
 
 const createPollText = async (
   poll: Poll,
-  chatId: number | string
+  votersResponse = undefined
 ): Promise<string> => {
   const { id, question, options, expDate } = poll;
 
-  const votersResponse = await axios.get(
-    `${config.backendUrl}/poll/voters/${id}`
-  );
-
-  logAxiosResponse(votersResponse);
-
   const votesByOption: {
     [k: number]: UserVote[];
-  } = votersResponse.data;
+  } = votersResponse
+    ? votersResponse.data
+    : Object.fromEntries(options.map((_, idx) => [idx, []]));
 
-  const votesForEachOption = poll.options.map((_, idx) =>
-    votesByOption[idx].length
-      ? votesByOption[idx].map((vote) => vote.balance).reduce((a, b) => a + b)
+  const votesForEachOption = options.map((_, idx) =>
+    votesByOption[idx]
+      ? votesByOption[idx]
+          .map((vote) => vote.balance)
+          .reduce((a, b) => a + b, 0)
       : 0
   );
 
-  const allVotes = votesForEachOption.reduce((a, b) => a + b);
+  const allVotes = votesForEachOption.reduce((a, b) => a + b, 0);
 
-  const numOfVoters = options
-    .map((_, idx) => votesByOption[idx].length)
-    .reduce((a, b) => a + b);
+  const optionsText = options
+    .map((option, idx) => {
+      const perc =
+        votesByOption[idx]?.length > 0
+          ? (votesForEachOption[idx] / allVotes) * 100
+          : 0;
 
-  const titleText = `Poll #${id}: ${question}`;
-
-  const optionsText = poll.options
-    .map(
-      (option, idx) =>
-        `${option}\n▫️${
-          votesByOption[idx].length > 0
-            ? ((votesForEachOption[idx] / allVotes) * 100).toFixed(2)
-            : 0
-        }%`
-    )
+      return `${String.fromCharCode("a".charCodeAt(0) + idx)}) ${option}\n▫️${
+        Number.isInteger(perc) ? perc : perc.toFixed(2)
+      }%`;
+    })
     .join("\n\n");
 
-  const votersText = `👥[${numOfVoters} person${
-    numOfVoters === 1 ? "" : "s"
-  }](https://t.me/${
-    config.botUsername
-  }?start=voters_${id}_${chatId}) voted so far.`;
+  dayjs.extend(utc);
 
-  const dateText = dayjs().isAfter(dayjs.unix(expDate))
+  const dateText = dayjs().isAfter(dayjs.unix(+expDate))
     ? "Poll has already ended."
     : `Poll ends on ${dayjs
-        .unix(expDate)
+        .unix(+expDate)
         .utc()
         .format("YYYY-MM-DD HH:mm UTC")}`;
 
-  return `${titleText}\n\n${optionsText}\n\n${votersText}\n\n${dateText}`;
+  const numOfVoters = options
+    .map((_, idx) => votesByOption[idx]?.length)
+    .reduce((a, b) => a + b, 0);
+
+  const votersText = `👥 ${numOfVoters} person${
+    numOfVoters === 1 ? "" : "s"
+  } voted so far.`;
+
+  return (
+    `*Poll #${id}: ${question}*\n\n` +
+    `${optionsText}\n\n${dateText}\n\n${votersText}`
+  );
+};
+
+const sendPollMessage = async (
+  platformId: string,
+  poll: Poll
+): Promise<number> => {
+  const pollText = await createPollText(poll);
+
+  const voteButtonRow: { text: string; callback_data: string }[][] =
+    poll.options.map((option, idx) => [
+      {
+        text: option,
+        callback_data: `${idx};${poll.id};Vote`
+      }
+    ]);
+
+  const msgId = (
+    await Bot.Client.sendMessage(platformId, pollText, {
+      parse_mode: "Markdown",
+      reply_markup: {
+        inline_keyboard: voteButtonRow
+      }
+    })
+  ).message_id;
+
+  return msgId;
 };
 
 const createVoteListText = async (
@@ -226,11 +253,11 @@ const createVoteListText = async (
   poll: Poll,
   showBalance: boolean = true
 ): Promise<string> => {
+  const { id, options } = poll;
+
   const votersResponse = await axios.get(
     `${config.backendUrl}/poll/voters/${poll.id}`
   );
-
-  logAxiosResponse(votersResponse);
 
   const votesByOption: {
     [k: number]: UserVote[];
@@ -249,7 +276,7 @@ const createVoteListText = async (
   } = Object.fromEntries(poll.options.map((_, idx) => [idx, []]));
 
   await Promise.all(
-    poll.options.map(async (_, idx) => {
+    options.map(async (_, idx) => {
       const votes = votesByOption[idx];
 
       await Promise.all(
@@ -277,149 +304,96 @@ const createVoteListText = async (
     })
   );
 
-  const pollResults = poll.options
-    .map((option, idx) => {
-      const percentage =
-        votesByOption[idx].length > 0
-          ? ((votesForEachOption[idx] / allVotes) * 100).toFixed(2)
-          : 0;
+  const percentages = options.map((_, idx) => {
+    const perc =
+      votesByOption[idx].length > 0
+        ? (votesForEachOption[idx] / allVotes) * 100
+        : 0;
 
-      return `▫️ ${option} - ${percentage}%\n${voters[idx].join("")}`;
-    })
+    return Number.isInteger(perc) ? perc : perc.toFixed(2);
+  });
+
+  options
+    .map(
+      (option, idx) =>
+        `▫️ ${option} - ${
+          Number.isInteger(percentages[idx])
+            ? percentages[idx]
+            : Number(percentages[idx]).toFixed(2)
+        }%\n${voters[idx].join("")}`
+    )
     .join("\n");
 
-  return `Results for poll #${poll.id}:\n\n${pollResults}`;
+  const optionsText = options
+    .map(
+      (option, idx) =>
+        `${String.fromCharCode("a".charCodeAt(0) + idx)}) ${option}`
+    )
+    .join("\n");
+
+  const perc = [10, 69, 15, 16];
+
+  const barChart = options
+    .map(
+      (_, idx) =>
+        `${String.fromCharCode("a".charCodeAt(0) + idx)}) ${"█".repeat(
+          Number(perc[idx]) / 10
+        )} - ${perc[idx]}%`
+    )
+    .join("\n");
+
+  return `Results for poll #${id}:\n\n${optionsText}\n\n${barChart}`;
 };
 
 const pollBuildResponse = async (userId: number): Promise<boolean> => {
   switch (pollStorage.getUserStep(userId)) {
     case undefined:
-      await Bot.Client.sendMessage(
-        userId,
-        "Please use the /poll command in a guild."
-      );
-      return true;
     case 0:
       await Bot.Client.sendMessage(
         userId,
         "Please use the /poll command in a guild."
       );
       return true;
+
     case 1:
       await Bot.Client.sendMessage(
         userId,
         "A poll must have a token as the base of the weighted vote."
       );
       return true;
+
     case 2:
       await Bot.Client.sendMessage(
         userId,
         "A poll must have a question. Please send me the question of your poll."
       );
       return true;
+
     case 3:
       await Bot.Client.sendMessage(
         userId,
         "A poll must have a duration. Please send me the duration of your poll in DD:HH:mm format."
       );
       return true;
+
     case 4:
       await Bot.Client.sendMessage(
         userId,
         "A poll must have options. Please send me the first one."
       );
       return true;
+
     case 5:
       await Bot.Client.sendMessage(
         userId,
         "A poll must have more than one option. Please send me a second one."
       );
       return true;
+
     default:
       break;
   }
   return false;
-};
-
-const updatePollTexts = async (
-  pollText: string,
-  newPollText: string,
-  poll: Poll,
-  chatId: string,
-  pollMessageId: string,
-  adminId: number,
-  adminMessageId: number
-): Promise<void> => {
-  try {
-    if (newPollText.trim() === pollText.trim()) {
-      return;
-    }
-
-    if (dayjs().isAfter(dayjs.unix(poll.expDate))) {
-      await Bot.Client.editMessageText(
-        adminId,
-        adminMessageId,
-        undefined,
-        newPollText,
-        { parse_mode: "Markdown" }
-      );
-
-      await Bot.Client.editMessageText(
-        chatId,
-        parseInt(pollMessageId, 10),
-        undefined,
-        newPollText,
-        { parse_mode: "Markdown" }
-      );
-
-      return;
-    }
-
-    const voteButtonRow = poll.options.map((option) => [
-      {
-        text: option,
-        callback_data: `${option};${poll.id};${adminId}:${adminMessageId};Vote`
-      }
-    ]);
-
-    const listVotersButton = {
-      text: "List Voters",
-      callback_data: `${chatId}:${pollMessageId};${poll.id};ListVoters`
-    };
-
-    const updateResultButton = {
-      text: "Update Result",
-      callback_data: `${chatId}:${pollMessageId};${poll.id};UpdateResult`
-    };
-
-    await Bot.Client.editMessageText(
-      chatId,
-      parseInt(pollMessageId, 10),
-      undefined,
-      newPollText,
-      {
-        parse_mode: "Markdown",
-        reply_markup: {
-          inline_keyboard: voteButtonRow
-        }
-      }
-    );
-
-    await Bot.Client.editMessageText(
-      adminId,
-      adminMessageId,
-      undefined,
-      newPollText,
-      {
-        parse_mode: "Markdown",
-        reply_markup: {
-          inline_keyboard: [[listVotersButton, updateResultButton]]
-        }
-      }
-    );
-  } catch (err) {
-    logger.error(err);
-  }
 };
 
 export {
@@ -428,9 +402,9 @@ export {
   logAxiosResponse,
   extractBackendErrorMessage,
   initPoll,
+  sendPollMessage,
   createPollText,
   createVoteListText,
   pollBuildResponse,
-  sendPollTokenChooser,
-  updatePollTexts
+  sendPollTokenChooser
 };
