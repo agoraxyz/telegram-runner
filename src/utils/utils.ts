@@ -319,7 +319,7 @@ const createVoteListText = async (
         `▫️ ${option} - ${
           Number.isInteger(percentages[idx])
             ? percentages[idx]
-            : Number(percentages[idx]).toFixed(2)
+            : (+percentages[idx]).toFixed(2)
         }%\n${voters[idx].join("")}`
     )
     .join("\n");
@@ -337,7 +337,7 @@ const createVoteListText = async (
     .map(
       (_, idx) =>
         `${String.fromCharCode("a".charCodeAt(0) + idx)}) ${"█".repeat(
-          Number(perc[idx]) / 10
+          +perc[idx] / 10
         )} - ${perc[idx]}%`
     )
     .join("\n");
