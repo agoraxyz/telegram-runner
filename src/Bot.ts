@@ -25,7 +25,7 @@ export default class Bot {
       logger.verbose(`response time ${Date.now() - start}ms`);
     });
 
-    // inbuilt commands
+    // built-in commands
     bot.start(TGCommands.startCommand);
     bot.help(TGCommands.helpCommand);
 
@@ -58,8 +58,6 @@ export default class Bot {
       TGActions.confirmedLeaveCommunityAction
     );
     bot.action(/;ChooseRequirement$/, TGActions.chooseRequirementAction);
-    bot.action(/;ListVoters$/, TGActions.listVotersAction);
-    bot.action(/;UpdateResult$/, TGActions.updateResultAction);
     bot.action(/;Vote$/, TGActions.voteAction);
 
     // starting the bot
