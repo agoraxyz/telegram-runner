@@ -6,7 +6,7 @@ import { ErrorResult } from "../api/types";
 import Bot from "../Bot";
 import config from "../config";
 import pollStorage from "../service/pollStorage";
-import { Poll, UserVote } from "../service/types";
+import { Poll } from "../service/types";
 import logger from "./logger";
 
 dayjs.extend(utc);
@@ -231,103 +231,6 @@ const sendPollMessage = async (
   return msgId;
 };
 
-const createVoteListText = async (
-  chatId: string,
-  poll: Poll,
-  showBalance: boolean = true
-): Promise<string> => {
-  const { id, options } = poll;
-
-  const votersResponse = await axios.get(
-    `${config.backendUrl}/poll/voters/${poll.id}`
-  );
-
-  const votesByOption: {
-    [k: number]: UserVote[];
-  } = votersResponse.data;
-
-  const votesForEachOption = poll.options.map((_, idx) =>
-    votesByOption[idx].length
-      ? votesByOption[idx].map((vote) => vote.balance).reduce((a, b) => a + b)
-      : 0
-  );
-
-  const allVotes = votesForEachOption.reduce((a, b) => a + b);
-
-  const voters: {
-    [k: number]: string[];
-  } = Object.fromEntries(poll.options.map((_, idx) => [idx, []]));
-
-  await Promise.all(
-    options.map(async (_, idx) => {
-      const votes = votesByOption[idx];
-
-      await Promise.all(
-        votes.map(async (vote) => {
-          const chatMember = await Bot.Client.getChatMember(
-            chatId,
-            parseInt(vote.tgId, 10)
-          );
-          const {
-            user: { first_name }
-          } = chatMember;
-          const { balance } = vote;
-
-          if (showBalance) {
-            voters[idx].push(
-              chatMember
-                ? `${first_name} ${balance.toFixed(2)}\n`
-                : `Unknown_User ${balance.toFixed(2)}\n`
-            );
-          } else {
-            voters[idx].push(chatMember ? `${first_name}\n` : `Unknown_User\n`);
-          }
-        })
-      );
-    })
-  );
-
-  const percentages = options.map((_, idx) => {
-    const perc =
-      votesByOption[idx].length > 0
-        ? (votesForEachOption[idx] / allVotes) * 100
-        : 0;
-
-    return Number.isInteger(perc) ? perc : perc.toFixed(2);
-  });
-
-  options
-    .map(
-      (option, idx) =>
-        `▫️ ${option} - ${
-          Number.isInteger(percentages[idx])
-            ? percentages[idx]
-            : (+percentages[idx]).toFixed(2)
-        }%\n${voters[idx].join("")}`
-    )
-    .join("\n");
-
-  const optionsText = options
-    .map(
-      (option, idx) =>
-        `${String.fromCharCode("a".charCodeAt(0) + idx)}) ${option}`
-    )
-    .join("\n");
-
-  const perc = [10, 69, 15, 16];
-
-  const barChart = options
-    .map(
-      (_, idx) =>
-        `${String.fromCharCode("a".charCodeAt(0) + idx)}) ${"█".repeat(
-          +perc[idx] / 10
-        )} - ${perc[idx]}%`
-    )
-    .join("\n");
-
-  return `Results for poll #${id}:\n\n${optionsText}\n\n${barChart}`;
-};
-
 const pollBuildResponse = async (userId: number): Promise<boolean> => {
   switch (pollStorage.getUserStep(userId)) {
     case undefined:
@@ -387,7 +290,6 @@ export {
   initPoll,
   sendPollMessage,
   createPollText,
-  createVoteListText,
   pollBuildResponse,
   sendPollTokenChooser
 };

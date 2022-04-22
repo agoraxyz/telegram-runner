@@ -18,11 +18,6 @@ type Poll = {
   roleId: number;
 };
 
-type UserVote = {
-  tgId: string;
-  balance: number;
-};
-
 type Ctx = NarrowedContext<
   Context,
   {
@@ -31,4 +26,4 @@ type Ctx = NarrowedContext<
   }
 > & { startPayload?: string };
 
-export { NewPoll, Poll, UserVote, Ctx };
+export { NewPoll, Poll, Ctx };

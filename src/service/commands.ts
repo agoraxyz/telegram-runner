@@ -12,7 +12,6 @@ import {
   sendPollTokenChooser,
   extractBackendErrorMessage,
   pollBuildResponse,
-  createVoteListText,
   initPoll
 } from "../utils/utils";
 import pollStorage from "./pollStorage";
@@ -54,30 +53,6 @@ const helpCommand = (ctx: Ctx): void => {
 
 const startCommand = async (ctx: Ctx): Promise<void> => {
   const { message } = ctx;
-
-  if (ctx.startPayload?.includes("voters_")) {
-    const [, pollId, chatId] = ctx.startPayload.split("_");
-
-    try {
-      const pollResponse = await axios.get(
-        `${config.backendUrl}/poll/${pollId}`
-      );
-
-      if (pollResponse?.data?.length === 0) {
-        await ctx.reply("Failed to fetch voters");
-      }
-
-      const poll = pollResponse.data;
-
-      const responseText = await createVoteListText(chatId, poll, false);
-
-      await ctx.reply(responseText);
-    } catch (e) {
-      logger.error(e);
-    }
-
-    return;
-  }
 
   if (message.chat.id > 0) {
     const refIdRegex = /^\/start [a-z0-9]{64}$/;
