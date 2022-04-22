@@ -81,11 +81,11 @@ const voteAction = async (ctx: any): Promise<void> => {
       });
     }
 
-    const votersResponse = await axios.get(
-      `${config.backendUrl}/poll/voters/${pollId}`
+    const results = await axios.get(
+      `${config.backendUrl}/poll/results/${pollId}`
     );
 
-    const newPollText = await createPollText(poll, votersResponse);
+    const newPollText = await createPollText(poll, results);
 
     if (pollText.trim() === newPollText.trim()) {
       return;

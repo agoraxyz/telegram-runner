@@ -80,7 +80,7 @@ const startCommand = async (ctx: Ctx): Promise<void> => {
   }
 
   if (message.chat.id > 0) {
-    const refIdRegex = new RegExp(/^\/start [a-z0-9]{64}$/);
+    const refIdRegex = /^\/start [a-z0-9]{64}$/;
 
     if (refIdRegex.test(message.text)) {
       const refId = message.text.split("/start ")[1];
