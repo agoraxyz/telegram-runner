@@ -136,11 +136,13 @@ const manageGroups = async (
 const isIn = async (groupId: number): Promise<IsInResult> => {
   try {
     const chat = await Bot.Client.getChat(groupId);
-    if (chat.type !== "supergroup") {
+
+    if (!["supergroup", "channel"].includes(chat.type)) {
       return {
         ok: false,
         message:
-          "This Group is not a SuperGroup! Please convert into a Supergroup first!"
+          "This is not a Supergroup!\n" +
+          "Please convert this group into a Supergroup first!"
       };
     }
     const membership = await Bot.Client.getChatMember(
@@ -159,7 +161,7 @@ const isIn = async (groupId: number): Promise<IsInResult> => {
     return {
       ok: false,
       message:
-        "You have to add @Guildxyz_bot to your Telegram group to continue!"
+        "You have to add @Guildxyz_bot to your Telegram group/channel to continue!"
     };
   }
 
