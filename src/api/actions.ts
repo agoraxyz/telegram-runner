@@ -10,15 +10,15 @@ const isMember = async (
   groupId: string,
   platformUserId: number
 ): Promise<boolean> => {
-  logger.verbose(
-    `Called isMember, groupId=${groupId}, platformUserId=${platformUserId}`
-  );
+  logger.verbose({ message: "isMember", meta: { groupId, platformUserId } });
 
   try {
-    if (!platformUserId)
+    if (!platformUserId) {
       throw new Error(`PlatformUserId doesn't exists for ${platformUserId}.`);
+    }
 
     const member = await Bot.Client.getChatMember(groupId, +platformUserId);
+
     return member !== undefined && member.status === "member";
   } catch (_) {
     return false;
@@ -31,22 +31,25 @@ const generateInvite = async (
 ): Promise<string | undefined> => {
   try {
     const isTelegramUser = await isMember(groupId, platformUserId);
-    logger.verbose(`groupId=groupId, isMember=${isTelegramUser}`);
-    logger.verbose(
-      `Called generateInvite, platformUserId=${platformUserId}, ` +
-        `groupId=${groupId}`
-    );
+    logger.verbose({
+      message: "generateInvite",
+      meta: { groupId, platformUserId }
+    });
 
     if (!isTelegramUser && platformUserId) {
       await Bot.Client.unbanChatMember(groupId, +platformUserId);
-      const generate = await Bot.Client.createChatInviteLink(groupId, {
+
+      const { invite_link } = await Bot.Client.createChatInviteLink(groupId, {
         member_limit: 1
       });
-      return generate.invite_link;
+
+      return invite_link;
     }
+
     return undefined;
   } catch (err) {
     logger.error(err);
+
     return undefined;
   }
 };
@@ -55,16 +58,15 @@ const manageGroups = async (
   params: ManageGroupsParam,
   isUpgrade: boolean
 ): Promise<boolean> => {
-  logger.verbose(
-    `Called manageGroups, params=${params}, isUpgrade=${isUpgrade}`
-  );
+  logger.verbose({ message: "manageGroups", meta: { params, isUpgrade } });
 
   const { platformUserId } = params;
 
   let result: boolean = true;
 
-  if (!platformUserId)
+  if (!platformUserId) {
     throw new Error(`PlatformUserId doesn't exists for ${platformUserId}.`);
+  }
 
   if (isUpgrade) {
     const invites: { link: string; name: string }[] = [];
@@ -88,6 +90,7 @@ const manageGroups = async (
           }
         } catch (err) {
           logger.error(err);
+
           result = false;
         }
       })
@@ -104,6 +107,7 @@ const manageGroups = async (
         );
       } catch (err) {
         logger.error(err);
+
         result = false;
       }
     }
@@ -126,6 +130,7 @@ const manageGroups = async (
       );
     } catch (err) {
       logger.error(err);
+
       result = false;
     }
   }

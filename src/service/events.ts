@@ -187,28 +187,31 @@ const onUserLeftGroup = async (
   }
 };
 
-const onChatMemberUpdate = async (
-  ctx: NarrowedContext<Context, Update.ChatMemberUpdate>
-) => {
-  const member = ctx.update.chat_member;
+const onChatMemberUpdate = async (ctx: any) => {
+  const {
+    from: { id: userId },
+    chat: { id: groupId },
+    invite_link: invLink
+  } = ctx.update.chat_member;
 
-  if (member.invite_link) {
-    const invLink = member.invite_link.invite_link;
-    logger.verbose(`join inviteLink ${invLink}`);
+  if (invLink) {
+    const { invite_link } = invLink;
+
     const bot = await Bot.Client.getMe();
-    if (member.invite_link.creator.id === bot.id) {
-      logger.verbose(
-        `function: onChatMemberUpdate, user: ${member.from.id}, ` +
-          `chat: ${member.chat.id}, invite: ${invLink}`
-      );
 
-      onUserJoined(member.from.id, member.chat.id);
+    if (invLink.creator.id === bot.id) {
+      logger.verbose({
+        message: "onChatMemberUpdate",
+        meta: {
+          groupId,
+          userId,
+          invite_link
+        }
+      });
+
+      onUserJoined(userId, groupId);
     } else {
-      kickUser(
-        member.chat.id,
-        member.from.id,
-        "haven't joined through Guild interface!"
-      );
+      kickUser(groupId, userId, "haven't joined through Guild interface!");
     }
   }
 };
@@ -218,7 +221,7 @@ const onBlocked = async (
 ): Promise<void> => {
   const platformUserId = ctx.update.my_chat_member.from.id;
 
-  logger.verbose(`User "${platformUserId}" has blocked the bot.`);
+  logger.warn(`User "${platformUserId}" has blocked the bot.`);
 
   try {
     const communities = await fetchCommunitiesOfUser(platformUserId);

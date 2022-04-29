@@ -68,7 +68,10 @@ const startCommand = async (ctx: Ctx): Promise<void> => {
 
         let res: AxiosResponse;
 
-        logger.verbose(`onChatStart join - ${refId} ${platformUserId}`);
+        logger.verbose({
+          message: "startCommand",
+          meta: { platformUserId, refId }
+        });
 
         try {
           res = await axios.post(
@@ -116,7 +119,7 @@ const startCommand = async (ctx: Ctx): Promise<void> => {
           })
         );
 
-        logger.verbose(`inviteLink: ${invites}`);
+        logger.verbose({ message: "invites", meta: { invites } });
 
         if (invites.length) {
           ctx.replyWithMarkdown(

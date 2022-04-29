@@ -23,6 +23,7 @@ const getErrorResult = (error: any): ErrorResult => {
     errorMsg = error.response.description;
   } else {
     logger.error(error);
+
     errorMsg = "unknown error";
   }
 
