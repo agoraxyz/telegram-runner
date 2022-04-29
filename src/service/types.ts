@@ -1,5 +1,5 @@
 import { Context, NarrowedContext } from "telegraf";
-import { Message, Update } from "typegram";
+import { Message, Update } from "telegraf/types";
 
 type NewPoll = {
   requirementId: number;

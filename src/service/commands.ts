@@ -1,6 +1,6 @@
 import axios, { AxiosResponse } from "axios";
 import { Markup } from "telegraf";
-import { InlineKeyboardButton } from "typegram";
+import { InlineKeyboardButton } from "telegraf/types";
 import dayjs from "dayjs";
 import { LevelInfo } from "../api/types";
 import Bot from "../Bot";

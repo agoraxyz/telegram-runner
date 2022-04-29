@@ -1,6 +1,6 @@
 import axios from "axios";
 import { Context, NarrowedContext } from "telegraf";
-import { Update } from "typegram";
+import { Update } from "telegraf/types";
 import Bot from "../Bot";
 import {
   sendNotASuperGroup,
