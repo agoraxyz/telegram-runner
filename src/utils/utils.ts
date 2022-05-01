@@ -253,18 +253,24 @@ const pollBuildResponse = async (userId: number): Promise<boolean> => {
       );
 
       return true;
-    } if (poll.question === "") {
+    }
+
+    if (poll.question === "") {
       await Bot.Client.sendMessage(userId, "The poll must have a question.");
 
       return true;
-    } if (poll.options.length <= 1) {
+    }
+
+    if (poll.options.length <= 1) {
       await Bot.Client.sendMessage(
         userId,
         "The poll must have at least two options."
       );
 
       return true;
-    } if (poll.expDate === "") {
+    }
+
+    if (poll.expDate === "") {
       await Bot.Client.sendMessage(
         userId,
         "The poll must have an expriation date."
