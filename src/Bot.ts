@@ -37,6 +37,7 @@ export default class Bot {
     bot.command("groupid", TGCommands.groupIdCommand);
     bot.command("add", TGCommands.addCommand);
     bot.command("poll", TGCommands.pollCommand);
+    bot.command("enough", TGCommands.enoughCommand);
     bot.command("done", TGCommands.doneCommand);
     bot.command("reset", TGCommands.resetCommand);
     bot.command("cancel", TGCommands.cancelCommand);

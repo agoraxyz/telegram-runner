@@ -40,18 +40,21 @@ const chooseRequirementAction = async (ctx: any): Promise<void> => {
 
     pollStorage.saveReqId(chatId, requrementId);
 
+    const [name, chain] = requrementInfo.split("-");
+
     await Bot.Client.editMessageText(
       chatId,
       message_id,
       undefined,
-      `Your choosen token is:\n\n${requrementInfo}`
+      `Your have chosen ${name} on ${chain}`
     );
 
-    pollStorage.setUserStep(chatId, 2);
+    pollStorage.setUserStep(chatId, 1);
 
     await Bot.Client.sendMessage(
       chatId,
-      "Now, please send me the question of your poll."
+      "Please give me the subject of the poll. For example:\n" +
+        '"Do you think drinking milk is cool?"'
     );
   } catch (err) {
     logger.error(err);

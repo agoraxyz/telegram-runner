@@ -1,6 +1,7 @@
 import axios from "axios";
 import { Context, NarrowedContext } from "telegraf";
 import { Update } from "telegraf/types";
+import dayjs from "dayjs";
 import Bot from "../Bot";
 import {
   sendNotASuperGroup,
@@ -12,8 +13,9 @@ import {
 } from "./common";
 import config from "../config";
 import logger from "../utils/logger";
-import { initPoll } from "../utils/utils";
+import { createPollText, initPoll } from "../utils/utils";
 import pollStorage from "./pollStorage";
+import { Poll } from "./types";
 
 const onMessage = async (
   ctx: NarrowedContext<Context, Update.MessageUpdate>
@@ -27,69 +29,90 @@ const onMessage = async (
   if (msg.chat.type === "private") {
     try {
       const userId = msg.from.id;
-      const step = pollStorage.getUserStep(userId);
       const messageText = msg.text.trim();
 
-      if (step === 2) {
-        pollStorage.savePollQuestion(userId, messageText);
-        pollStorage.setUserStep(userId, 3);
+      switch (pollStorage.getUserStep(userId)) {
+        case 1: {
+          pollStorage.savePollQuestion(userId, messageText);
+          pollStorage.setUserStep(userId, 2);
 
-        await Bot.Client.sendMessage(
-          userId,
-          "Now please send me the duration of your poll in DD:HH:mm format.\n" +
-            'For example if you want your poll to be active for 1.5 hours, you should send "0:1:30" or "00:01:30".'
-        );
-      } else if (step === 3) {
-        const dateRegex =
-          /([1-9][0-9]*|[0-9]):([0-1][0-9]|[0-9]|[2][0-4]):([0-5][0-9]|[0-9])/;
-        const found = messageText.match(dateRegex);
-
-        if (!found) {
-          await Bot.Client.sendMessage(
-            userId,
-            "The message you sent me is not in the DD:HH:mm format. Please verify the contents of your message and send again."
+          await ctx.reply(
+            "Please give me the options for the poll (one by one)."
           );
+
           return;
         }
 
-        const date = found[0];
+        case 2: {
+          const optionSaved = pollStorage.savePollOption(userId, messageText);
 
-        pollStorage.savePollExpDate(userId, date);
-        pollStorage.setUserStep(userId, 4);
+          if (!optionSaved) {
+            await ctx.reply("This option has already been added.");
 
-        await Bot.Client.sendMessage(
-          userId,
-          "Now send me the first option of your poll."
-        );
-      } else if (step >= 4) {
-        const optionSaved = pollStorage.savePollOption(userId, messageText);
+            return;
+          }
 
-        if (!optionSaved) {
-          await Bot.Client.sendMessage(
-            userId,
-            "This option is invalid please send me another."
-          );
+          if (pollStorage.getPoll(userId).options.length === 1) {
+            await ctx.reply("Please give me the second option of your poll.");
+          } else {
+            await ctx.reply(
+              "Please give me a new option or go to the next step by using /enough"
+            );
+          }
+
           return;
         }
 
-        if (step === 4) {
-          await Bot.Client.sendMessage(
-            userId,
-            "Send me the second option of your poll."
+        case 3: {
+          const dateRegex =
+            /([1-9][0-9]*|[0-9]):([0-1][0-9]|[0-9]|[2][0-4]):([0-5][0-9]|[0-9])/;
+          const found = messageText.match(dateRegex);
+
+          if (!found) {
+            await ctx.reply(
+              "The message you sent me is not in the DD:HH:mm format. Please verify the contents of your message and send again."
+            );
+
+            return;
+          }
+
+          const [day, hour, minute] = found[0].split(":");
+
+          const expDate = dayjs()
+            .add(parseInt(day, 10), "day")
+            .add(parseInt(hour, 10), "hour")
+            .add(parseInt(minute, 10), "minute")
+            .unix()
+            .toString();
+
+          pollStorage.savePollExpDate(userId, expDate);
+          pollStorage.setUserStep(userId, 4);
+
+          const poll = {
+            id: 69,
+            ...pollStorage.getPoll(userId)
+          } as unknown as Poll;
+
+          await ctx.replyWithMarkdown(await createPollText(poll));
+
+          await ctx.reply(
+            "You can accept it by using /done,\n" +
+              "reset the data by using /reset\n" +
+              "or cancel it using /cancel."
           );
-        } else if (step >= 5) {
-          await Bot.Client.sendMessage(
-            userId,
-            "You can send me another option or use /done to start and publish your poll."
-          );
+
+          return;
         }
-        pollStorage.setUserStep(userId, step + 1);
-      } else {
-        await ctx.reply("I'm sorry, but I couldn't interpret your request.");
-        await ctx.replyWithMarkdown(
-          "You can find more information on the [Guild](https://docs.guild.xyz/) website."
-        );
+
+        default: {
+          break;
+        }
       }
+
+      await ctx.replyWithMarkdown(
+        "I'm sorry, but I couldn't interpret your request.\n" +
+          "You can find more information on [docs.guild.xyz](https://docs.guild.xyz/)."
+      );
     } catch (err) {
       logger.error(err);
     }

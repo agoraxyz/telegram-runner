@@ -268,6 +268,23 @@ const pollCommand = async (ctx: Ctx): Promise<void> => {
   initPoll(ctx);
 };
 
+const enoughCommand = async (ctx: Ctx): Promise<void> => {
+  const msg = ctx.message;
+  const userId = msg.from.id;
+
+  if (msg.chat.type === "private") {
+    if (pollStorage.getUserStep(userId) === 2) {
+      pollStorage.setUserStep(userId, 3);
+
+      ctx.reply(
+        "Please give me the duration of the poll in the DD:HH:mm format (days:hours:minutes)"
+      );
+    }
+  } else {
+    ctx.reply("Please use this command in private");
+  }
+};
+
 const doneCommand = async (ctx: Ctx): Promise<void> => {
   const userId = ctx.message.from.id;
 
@@ -281,36 +298,27 @@ const doneCommand = async (ctx: Ctx): Promise<void> => {
     }
 
     const poll = pollStorage.getPoll(userId);
-    const duration = poll.expDate.split(":");
     const startDate = dayjs().unix();
-    const expDate = dayjs()
-      .add(parseInt(duration[0], 10), "day")
-      .add(parseInt(duration[1], 10), "hour")
-      .add(parseInt(duration[2], 10), "minute")
-      .unix();
-
-    const { platformId, requirementId, question, options } = poll;
 
     await axios.post(
       `${config.backendUrl}/poll`,
       {
         platform: config.platform,
-        platformId,
-        requirementId,
-        question,
         startDate,
-        expDate,
-        options
+        ...poll
       },
       { timeout: 150000 }
     );
 
     pollStorage.deleteMemory(userId);
+
+    await Bot.Client.sendMessage(userId, "The poll has been created.");
   } catch (err) {
     pollStorage.deleteMemory(userId);
-    Bot.Client.sendMessage(
+
+    await Bot.Client.sendMessage(
       userId,
-      "Something went wrong. Please try again or contact us."
+      "There was an error while creating the poll."
     );
 
     const errorMessage = extractBackendErrorMessage(err);
@@ -324,35 +332,37 @@ const doneCommand = async (ctx: Ctx): Promise<void> => {
 };
 
 const resetCommand = async (ctx: Ctx): Promise<void> => {
+  const userId = ctx.message.from.id;
+
   try {
-    if (ctx.message.chat.type !== "private") {
-      return;
-    }
+    if (pollStorage.getUserStep(userId) > 0) {
+      const { platformId } = pollStorage.getPoll(userId);
 
-    const platformUserId = ctx.message.from.id;
+      pollStorage.deleteMemory(userId);
+      pollStorage.initPoll(userId, platformId);
+      pollStorage.setUserStep(userId, 1);
 
-    if (pollStorage.getUserStep(platformUserId) > 0) {
-      const { platformId } = pollStorage.getPoll(platformUserId);
+      const guildIdRes = await axios.get(
+        `${config.backendUrl}/guild/platformId/${platformId}`
+      );
 
-      pollStorage.deleteMemory(platformUserId);
-      pollStorage.initPoll(platformUserId, platformId);
-      pollStorage.setUserStep(platformUserId, 1);
+      if (!guildIdRes?.data) {
+        await ctx.reply("Please use this command in a guild.");
 
-      const guildIdRes = await axios
-        .get(`${config.backendUrl}/guild/platformId/${platformId}`)
-        .catch(() => undefined);
-
-      if (!guildIdRes) {
-        ctx.reply("Please use this command in a guild.");
         return;
       }
 
       await Bot.Client.sendMessage(
-        platformUserId,
-        "The poll building process has been reset."
+        userId,
+        "The current poll creation procedure has been restarted."
       );
 
-      await sendPollTokenChooser(ctx, platformUserId, guildIdRes.data.id);
+      await sendPollTokenChooser(ctx, userId, guildIdRes.data.id);
+    } else {
+      await Bot.Client.sendMessage(
+        userId,
+        "You don't have an active poll creation process."
+      );
     }
   } catch (err) {
     logger.error(err);
@@ -360,19 +370,20 @@ const resetCommand = async (ctx: Ctx): Promise<void> => {
 };
 
 const cancelCommand = async (ctx: Ctx): Promise<void> => {
+  const userId = ctx.message.from.id;
+
   try {
-    if (ctx.message.chat.type !== "private") {
-      return;
-    }
-
-    const userId = ctx.message.from.id;
-
-    if (pollStorage.getUserStep(userId) > 0) {
+    if (pollStorage.getPoll(userId)) {
       pollStorage.deleteMemory(userId);
 
       await Bot.Client.sendMessage(
         userId,
-        "The poll creation process has been cancelled. Use /poll to create a new poll."
+        "The current poll creation process has been cancelled."
+      );
+    } else {
+      await Bot.Client.sendMessage(
+        userId,
+        "You don't have an active poll creation process."
       );
     }
   } catch (err) {
@@ -390,6 +401,7 @@ export {
   groupIdCommand,
   addCommand,
   pollCommand,
+  enoughCommand,
   doneCommand,
   resetCommand,
   cancelCommand
