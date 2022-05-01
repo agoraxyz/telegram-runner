@@ -10,14 +10,15 @@ const setUserStep = (userId: number, step: number): void => {
 const getUserStep = (userId: number): number => userStep.get(userId.toString());
 
 const initPoll = (userId: number, platformId: string): void => {
-  const pollOptions: string[] = [];
   pollOfUser.set(userId.toString(), {
     requirementId: 0,
     platformId,
     question: "",
-    options: pollOptions,
+    options: [],
     expDate: ""
   });
+
+  setUserStep(userId, 0);
 };
 
 const saveReqId = (userId: number, requirementId: number): void => {

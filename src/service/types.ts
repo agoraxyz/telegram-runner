@@ -15,7 +15,6 @@ type Poll = {
   startDate: number;
   expDate: number;
   options: string[];
-  roleId: number;
 };
 
 type Ctx = NarrowedContext<
