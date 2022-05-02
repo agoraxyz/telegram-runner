@@ -55,24 +55,28 @@ const leaveCommunity = async (
 
 const kickUser = async (
   groupId: number,
-  platformUserId: number,
+  userId: number,
   reason: string
 ): Promise<void> => {
   logger.verbose({
     message: "kickUser",
-    meta: { groupId, platformUserId, reason }
+    meta: { groupId, userId, reason }
   });
 
   try {
-    await Bot.Client.banChatMember(groupId, +platformUserId);
+    await Bot.Client.banChatMember(groupId, +userId);
 
     const groupName = await getGroupName(groupId);
 
-    await Bot.Client.sendMessage(
-      platformUserId,
-      "You have been kicked from the group " +
-        `${groupName}, because you ${reason}.`
-    );
+    try {
+      await Bot.Client.sendMessage(
+        userId,
+        "You have been kicked from the group " +
+          `${groupName}, because you ${reason}.`
+      );
+    } catch (_) {
+      logger.warn(`The bot can't initiate conversation with user "${userId}"`);
+    }
   } catch (err) {
     logger.error(err);
   }

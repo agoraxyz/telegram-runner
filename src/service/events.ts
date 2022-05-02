@@ -17,7 +17,7 @@ import { createPollText, initPoll } from "../utils/utils";
 import pollStorage from "./pollStorage";
 import { Poll } from "./types";
 
-const onMessage = async (
+const messageUpdate = async (
   ctx: NarrowedContext<Context, Update.MessageUpdate>
 ): Promise<void> => {
   const msg = ctx.update.message as {
@@ -119,7 +119,7 @@ const onMessage = async (
   }
 };
 
-const onChannelPost = async (
+const channelPostUpdate = async (
   ctx: NarrowedContext<Context, Update.ChannelPostUpdate>
 ): Promise<void> => {
   const post = ctx.update.channel_post as {
@@ -196,12 +196,30 @@ const onUserRemoved = async (
     );
 
     logger.debug(JSON.stringify(res.data));
+  } catch (_) {
+    logger.error("Failed to remove user from Guild.");
+  }
+};
+
+const newChatMembersUpdate = async (
+  ctx: NarrowedContext<Context, any>
+): Promise<void> => {
+  const msg = ctx.update.message;
+  const groupId = msg.chat.id;
+  const userId = msg.new_chat_member.id;
+
+  try {
+    kickUser(
+      groupId,
+      userId,
+      "have joined the group without using an invite link"
+    );
   } catch (err) {
     logger.error(err);
   }
 };
 
-const onUserLeftGroup = async (
+const leftChatMemberUpdate = async (
   ctx: NarrowedContext<Context, any>
 ): Promise<void> => {
   const msg = ctx.update.message;
@@ -211,7 +229,7 @@ const onUserLeftGroup = async (
   }
 };
 
-const onChatMemberUpdate = async (
+const chatMemberUpdate = async (
   ctx: NarrowedContext<Context, Update.ChatMemberUpdate>
 ) => {
   const {
@@ -220,25 +238,29 @@ const onChatMemberUpdate = async (
     invite_link: invLink
   } = ctx.update.chat_member;
 
-  if (invLink) {
-    const { invite_link } = invLink;
+  try {
+    if (invLink) {
+      const { invite_link } = invLink;
 
-    const bot = await Bot.Client.getMe();
+      const bot = await Bot.Client.getMe();
 
-    if (invLink.creator.id === bot.id) {
-      logger.verbose({
-        message: "onChatMemberUpdate",
-        meta: {
-          groupId,
-          userId,
-          invite_link
-        }
-      });
+      if (invLink.creator.id === bot.id) {
+        logger.verbose({
+          message: "onChatMemberUpdate",
+          meta: {
+            groupId,
+            userId,
+            invite_link
+          }
+        });
 
-      onUserJoined(userId, groupId);
-    } else {
-      kickUser(groupId, userId, "haven't joined through Guild interface!");
+        onUserJoined(userId, groupId);
+      } else {
+        kickUser(groupId, userId, "haven't joined through Guild interface!");
+      }
     }
+  } catch (err) {
+    logger.error(err);
   }
 };
 
@@ -260,7 +282,7 @@ const onBlocked = async (
   }
 };
 
-const onMyChatMemberUpdate = async (
+const myChatMemberUpdate = async (
   ctx: NarrowedContext<Context, Update.MyChatMemberUpdate>
 ): Promise<void> => {
   const { my_chat_member } = ctx.update;
@@ -291,12 +313,13 @@ const onMyChatMemberUpdate = async (
 };
 
 export {
-  onMessage,
-  onChannelPost,
+  messageUpdate,
+  channelPostUpdate,
   onUserJoined,
-  onUserLeftGroup,
+  newChatMembersUpdate,
+  leftChatMemberUpdate,
   onUserRemoved,
-  onChatMemberUpdate,
-  onMyChatMemberUpdate,
+  chatMemberUpdate,
+  myChatMemberUpdate,
   onBlocked
 };

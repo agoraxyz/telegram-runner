@@ -150,12 +150,10 @@ const isIn = async (groupId: number): Promise<IsInResult> => {
           "Please convert this group into a Supergroup first!"
       };
     }
-    const membership = await Bot.Client.getChatMember(
-      groupId,
-      (
-        await Bot.Client.getMe()
-      ).id
-    );
+
+    const botId = (await Bot.Client.getMe()).id;
+    const membership = await Bot.Client.getChatMember(groupId, botId);
+
     if (membership.status !== "administrator") {
       return {
         ok: false,
