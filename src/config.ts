@@ -16,7 +16,6 @@ const api = {
   prefix: "/api",
   port: process.env.PORT || 8991
 };
-const supergroupVideo = process.env.SUPERGROUP_VIDEO_URL;
 const adminVideo = process.env.ADMIN_VIDEO_URL;
 const groupIdImage = process.env.GROUPID_IMAGE;
 
@@ -39,7 +38,6 @@ export default {
   api,
   platform: "TELEGRAM",
   assets: {
-    supergroupVideo,
     groupIdImage,
     adminVideo
   }

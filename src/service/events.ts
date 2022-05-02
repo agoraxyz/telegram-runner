@@ -4,11 +4,11 @@ import { Update } from "telegraf/types";
 import dayjs from "dayjs";
 import Bot from "../Bot";
 import {
+  sendMessageForSupergroup,
   sendNotASuperGroup,
+  sendNotAnAdministrator,
   fetchCommunitiesOfUser,
   leaveCommunity,
-  sendMessageForSupergroup,
-  sendNotAnAdministrator,
   kickUser
 } from "./common";
 import config from "../config";
@@ -127,6 +127,7 @@ const onChannelPost = async (
     chat: { id: number };
     text: string;
   };
+
   const channelId = post.chat.id;
 
   switch (post.text) {
@@ -210,7 +211,9 @@ const onUserLeftGroup = async (
   }
 };
 
-const onChatMemberUpdate = async (ctx: any) => {
+const onChatMemberUpdate = async (
+  ctx: NarrowedContext<Context, Update.ChatMemberUpdate>
+) => {
   const {
     from: { id: userId },
     chat: { id: groupId },
@@ -260,29 +263,30 @@ const onBlocked = async (
 const onMyChatMemberUpdate = async (
   ctx: NarrowedContext<Context, Update.MyChatMemberUpdate>
 ): Promise<void> => {
+  const { my_chat_member } = ctx.update;
+  const { chat, old_chat_member, new_chat_member } = my_chat_member;
+
   try {
-    if (ctx.update.my_chat_member.new_chat_member?.status === "kicked") {
+    if (old_chat_member?.status === "kicked") {
       onBlocked(ctx);
-    }
-    if (
-      ctx.update.my_chat_member.new_chat_member?.status === "member" ||
-      ctx.update.my_chat_member.old_chat_member?.status === "member"
+    } else if (
+      new_chat_member?.status === "member" ||
+      new_chat_member?.status === "administrator"
     ) {
-      const groupId = ctx.update.my_chat_member.chat.id;
-      if (ctx.update.my_chat_member.chat.type !== "supergroup")
+      const groupId = chat.id;
+
+      if (["supergroup", "channel"].includes(chat.type)) {
+        if (new_chat_member?.status === "administrator") {
+          await sendMessageForSupergroup(groupId);
+        } else {
+          await sendNotAnAdministrator(groupId);
+        }
+      } else {
         await sendNotASuperGroup(groupId);
-      else if (
-        ctx.update.my_chat_member.new_chat_member?.status === "administrator"
-      ) {
-        await Bot.Client.sendMessage(
-          groupId,
-          `The Guild Bot has administrator privileges from now! We are ready to roll!`
-        );
-        await sendMessageForSupergroup(groupId);
-      } else await sendNotAnAdministrator(groupId);
+      }
     }
-  } catch (error) {
-    logger.error(`Error while calling onUserJoinedGroup:\n${error}`);
+  } catch (err) {
+    logger.error(err);
   }
 };
 

@@ -4,8 +4,11 @@ import Bot from "../Bot";
 import config from "../config";
 import logger from "../utils/logger";
 
-const getGroupName = async (groupId: number): Promise<string> =>
-  ((await Bot.Client.getChat(groupId)) as { title: string }).title;
+const getGroupName = async (groupId: number): Promise<string> => {
+  const group = (await Bot.Client.getChat(groupId)) as { title: string };
+
+  return group.title;
+};
 
 const fetchCommunitiesOfUser = async (
   platformUserId: number
@@ -61,7 +64,7 @@ const kickUser = async (
   });
 
   try {
-    await Bot.Client.kickChatMember(groupId, +platformUserId);
+    await Bot.Client.banChatMember(groupId, +platformUserId);
 
     const groupName = await getGroupName(groupId);
 
@@ -71,10 +74,7 @@ const kickUser = async (
         `${groupName}, because you ${reason}.`
     );
   } catch (err) {
-    logger.error(
-      "An error occured while trying to remove a Telegram user with userId " +
-        `"${platformUserId}", because:\n${err}`
-    );
+    logger.error(err);
   }
 };
 
@@ -83,26 +83,35 @@ const sendMessageForSupergroup = async (groupId: number) => {
 
   await Bot.Client.sendMessage(
     groupId,
-    `This is the group ID of "${groupName}":\n \`${groupId}\` . Paste it to the Guild creation interface!`,
+    `This is the group ID of "${groupName}": \`${groupId}\` .\n` +
+      "Paste it to the Guild creation interface!",
     { parse_mode: "Markdown" }
   );
-  await Bot.Client.sendPhoto(groupId, `${config.assets.groupIdImage}`);
+  await Bot.Client.sendPhoto(groupId, config.assets.groupIdImage);
+  await Bot.Client.sendMessage(
+    groupId,
+    "It is critically important to *set Group type to 'Private Group'* to create a functioning Guild",
+    { parse_mode: "Markdown" }
+  );
 };
 
 const sendNotASuperGroup = async (groupId: number) => {
   await Bot.Client.sendMessage(
     groupId,
-    `This Group is currently not a Supergroup. Please convert your Group into Supergroup first. There is a tutorial GIF in the attachment.`
+    "This Group is currently not a Supergroup.\n" +
+      "Please make sure to enable *all of the admin rights* for the bot.",
+    { parse_mode: "Markdown" }
   );
-  await Bot.Client.sendAnimation(groupId, `${config.assets.supergroupVideo}`);
+  await Bot.Client.sendAnimation(groupId, config.assets.adminVideo);
 };
 
 const sendNotAnAdministrator = async (groupId: number) => {
   await Bot.Client.sendMessage(
     groupId,
-    `The Guildxyz_bot hasn't got the right permissions to manage this group. Please make sure, our Bot has administrator permissions.`
+    "Please make sure to enable *all of the admin rights* for the bot.",
+    { parse_mode: "Markdown" }
   );
-  await Bot.Client.sendAnimation(groupId, `${config.assets.adminVideo}`);
+  await Bot.Client.sendAnimation(groupId, config.assets.adminVideo);
 };
 
 export {

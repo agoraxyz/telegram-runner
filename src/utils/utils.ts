@@ -5,7 +5,7 @@ import { ErrorResult } from "../api/types";
 import Bot from "../Bot";
 import config from "../config";
 import pollStorage from "../service/pollStorage";
-import { Poll } from "../service/types";
+import { Ctx, Poll } from "../service/types";
 import logger from "./logger";
 
 dayjs.extend(utc);
@@ -47,7 +47,7 @@ const extractBackendErrorMessage = (error: any) =>
   error.response?.data?.errors[0]?.msg;
 
 const sendPollTokenChooser = async (
-  ctx: any,
+  ctx: Ctx,
   platformUserId: number,
   guildId: number
 ): Promise<void> => {
@@ -94,7 +94,7 @@ const sendPollTokenChooser = async (
   );
 };
 
-const initPoll = async (ctx): Promise<void> => {
+const initPoll = async (ctx: any): Promise<void> => {
   const { update } = ctx;
 
   let chatId: number;
