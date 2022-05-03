@@ -53,8 +53,11 @@ const sendPollTokenChooser = async (
 ): Promise<void> => {
   const guildRes = await axios.get(`${config.backendUrl}/guild/${guildId}`);
 
-  if (!guildRes) {
+  const guild = guildRes?.data;
+
+  if (!guild) {
     ctx.reply("Something went wrong. Please try again or contact us.");
+
     return;
   }
 
@@ -68,6 +71,7 @@ const sendPollTokenChooser = async (
       "Your guild has no requirement with an appropriate token standard." +
         "Weighted polls only support ERC20."
     );
+
     return;
   }
 
@@ -82,9 +86,14 @@ const sendPollTokenChooser = async (
     ];
   });
 
+  const group = (await ctx.getChat()) as { title: string };
+
   await Bot.Client.sendMessage(
     platformUserId,
-    "Let's start creating your poll. You can use /reset or /cancel to restart or stop the process at any time.\n\n" +
+    "You are creating a token-weighted emoji-based poll in the " +
+      `channel "${group.title}" of the guild "${guild.name}".\n\n` +
+      "You can use /reset or /cancel to restart or stop the process at any time.\n" +
+      "Don't worry, I will guide you through the whole process.\n\n" +
       "First, please choose a token as the base of the weighted poll.",
     {
       reply_markup: {
