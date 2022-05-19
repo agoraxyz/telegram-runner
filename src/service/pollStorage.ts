@@ -30,10 +30,12 @@ const saveReqId = (userId: number, requirementId: number): void => {
 };
 
 const savePollQuestion = (userId: number, question: string): void => {
-  pollOfUser.set(userId.toString(), {
-    ...pollOfUser.get(userId.toString()),
-    question
-  });
+  if (pollOfUser.get(userId.toString())?.question === "") {
+    pollOfUser.set(userId.toString(), {
+      ...pollOfUser.get(userId.toString()),
+      question
+    });
+  }
 };
 
 const savePollDescription = (
