@@ -273,8 +273,8 @@ const enoughCommand = async (ctx: Ctx): Promise<void> => {
   const userId = msg.from.id;
 
   if (msg.chat.type === "private") {
-    if (pollStorage.getUserStep(userId) === 2) {
-      pollStorage.setUserStep(userId, 3);
+    if (pollStorage.getUserStep(userId) === 3) {
+      pollStorage.setUserStep(userId, 4);
 
       ctx.reply(
         "Please give me the duration of the poll in the DD:HH:mm format (days:hours:minutes)"

@@ -34,14 +34,39 @@ const messageUpdate = async (
       switch (pollStorage.getUserStep(userId)) {
         case 1: {
           pollStorage.savePollQuestion(userId, messageText);
-          pollStorage.setUserStep(userId, 2);
+
+          const buttons = [
+            [
+              {
+                text: "Yes",
+                callback_data: "desc;yes"
+              },
+              {
+                text: "No",
+                callback_data: "desc;no"
+              }
+            ]
+          ];
+
+          await ctx.reply("Do you want to add a description for the poll?", {
+            reply_markup: {
+              inline_keyboard: buttons
+            }
+          });
+
+          return;
+        }
+
+        case 2: {
+          pollStorage.savePollDescription(userId, messageText);
+          pollStorage.setUserStep(userId, 3);
 
           await ctx.reply("Please give me the first option of your poll.");
 
           return;
         }
 
-        case 2: {
+        case 3: {
           const optionSaved = pollStorage.savePollOption(userId, messageText);
 
           if (!optionSaved) {
@@ -61,14 +86,15 @@ const messageUpdate = async (
           return;
         }
 
-        case 3: {
+        case 4: {
           const dateRegex =
             /([1-9][0-9]*|[0-9]):([0-1][0-9]|[0-9]|[2][0-4]):([0-5][0-9]|[0-9])/;
           const found = messageText.match(dateRegex);
 
           if (!found) {
             await ctx.reply(
-              "The message you sent me is not in the DD:HH:mm format. Please verify the contents of your message and send again."
+              "The message you sent me is not in the DD:HH:mm format.\n" +
+                "Please verify the contents of your message and send again."
             );
 
             return;
@@ -149,7 +175,7 @@ const channelPostUpdate = async (
     }
 
     case "/channelid": {
-      ctx.reply(String(channelId), {
+      ctx.replyWithMarkdown(`\`${channelId}\``, {
         reply_to_message_id: post.message_id
       });
 

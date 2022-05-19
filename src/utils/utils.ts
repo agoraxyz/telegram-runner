@@ -188,7 +188,15 @@ const createPollText = async (
   poll: Poll,
   results = undefined
 ): Promise<string> => {
-  const { id, question, options, expDate } = poll;
+  const {
+    id,
+    requirementId,
+    platformId,
+    question,
+    description,
+    options,
+    expDate
+  } = poll;
 
   const [pollResults, numOfVoters] = results
     ? results.data
@@ -215,14 +223,23 @@ const createPollText = async (
         .utc()
         .format("YYYY-MM-DD HH:mm UTC")}`;
 
+  const guildRes = await axios.get(
+    `${config.backendUrl}/guild/platformId/${platformId}`
+  );
+
+  const requirements = guildRes?.data?.roles[0]?.requirements.filter(
+    (req) => req.id === requirementId
+  );
+
+  const requirementText = `This poll is weighted by the "${requirements[0].name}" token on the "${requirements[0].chain}" chain.`;
+
   const votersText = `👥 ${numOfVoters} person${
     numOfVoters === 1 ? "" : "s"
   } voted so far.`;
 
-  return (
-    `**Poll #${id}: ${question}**\n\n` +
-    `${optionsText}\n\n${dateText}\n\n${votersText}`
-  );
+  return `**Poll #${id}: ${question}**\n\n${
+    description ? `${description}\n\n` : ""
+  }${optionsText}\n\n${dateText}\n\n${requirementText}\n\n${votersText}`;
 };
 
 const sendPollMessage = async (
