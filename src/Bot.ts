@@ -59,6 +59,7 @@ export default class Bot {
       TGActions.confirmedLeaveCommunityAction
     );
     bot.action(/;ChooseRequirement$/, TGActions.chooseRequirementAction);
+    bot.action(/^desc;/, TGActions.pollDescriptionAction);
     bot.action(/;Vote$/, TGActions.voteAction);
 
     // starting the bot
