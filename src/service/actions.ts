@@ -106,7 +106,10 @@ const voteAction = async (ctx: any): Promise<void> => {
       `${config.backendUrl}/poll/results/${pollId}`
     );
 
-    const newPollText = await createPollText(poll, results);
+    const newPollText = await createPollText(
+      { platformId: chatId, ...poll },
+      results
+    );
 
     if (pollText.trim() === newPollText.trim()) {
       return;
