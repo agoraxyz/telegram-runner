@@ -14,6 +14,7 @@ const initPoll = (userId: number, platformId: string): void => {
     requirementId: 0,
     platformId,
     question: "",
+    description: "",
     options: [],
     expDate: ""
   });
@@ -28,10 +29,22 @@ const saveReqId = (userId: number, requirementId: number): void => {
   });
 };
 
-const savePollQuestion = (userId: number | string, question: string): void => {
+const savePollQuestion = (userId: number, question: string): void => {
+  if (pollOfUser.get(userId.toString())?.question === "") {
+    pollOfUser.set(userId.toString(), {
+      ...pollOfUser.get(userId.toString()),
+      question
+    });
+  }
+};
+
+const savePollDescription = (
+  userId: number | string,
+  description: string
+): void => {
   pollOfUser.set(userId.toString(), {
     ...pollOfUser.get(userId.toString()),
-    question
+    description
   });
 };
 
@@ -68,6 +81,7 @@ export default {
   getUserStep,
   saveReqId,
   savePollQuestion,
+  savePollDescription,
   savePollOption,
   savePollExpDate,
   getPoll,

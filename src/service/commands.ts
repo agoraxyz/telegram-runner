@@ -273,12 +273,20 @@ const enoughCommand = async (ctx: Ctx): Promise<void> => {
   const userId = msg.from.id;
 
   if (msg.chat.type === "private") {
-    if (pollStorage.getUserStep(userId) === 2) {
-      pollStorage.setUserStep(userId, 3);
+    const poll = pollStorage.getPoll(userId);
 
-      ctx.reply(
-        "Please give me the duration of the poll in the DD:HH:mm format (days:hours:minutes)"
-      );
+    if (poll) {
+      if (pollStorage.getUserStep(userId) === 3 && poll.options.length >= 2) {
+        pollStorage.setUserStep(userId, 4);
+
+        ctx.reply(
+          "Please give me the duration of the poll in the DD:HH:mm format (days:hours:minutes)"
+        );
+      } else {
+        ctx.reply("You didn't finish the previous steps.");
+      }
+    } else {
+      ctx.reply("You don't have an active poll creation process.");
     }
   } else {
     ctx.reply("Please use this command in private");
@@ -298,21 +306,26 @@ const doneCommand = async (ctx: Ctx): Promise<void> => {
     }
 
     const poll = pollStorage.getPoll(userId);
-    const startDate = dayjs().unix();
 
-    await axios.post(
-      `${config.backendUrl}/poll`,
-      {
-        platform: config.platform,
-        startDate,
-        ...poll
-      },
-      { timeout: 150000 }
-    );
+    if (poll) {
+      const startDate = dayjs().unix();
 
-    pollStorage.deleteMemory(userId);
+      await axios.post(
+        `${config.backendUrl}/poll`,
+        {
+          platform: config.platform,
+          startDate,
+          ...poll
+        },
+        { timeout: 150000 }
+      );
 
-    await Bot.Client.sendMessage(userId, "The poll has been created.");
+      pollStorage.deleteMemory(userId);
+
+      await Bot.Client.sendMessage(userId, "The poll has been created.");
+    } else {
+      ctx.reply("You don't have an active poll creation process.");
+    }
   } catch (err) {
     pollStorage.deleteMemory(userId);
 

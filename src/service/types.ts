@@ -5,16 +5,20 @@ type NewPoll = {
   requirementId: number;
   platformId: string;
   question: string;
+  description: string;
   options: string[];
   expDate: string;
 };
 
 type Poll = {
   id: number;
+  requirementId: number;
+  platformId: string;
   question: string;
+  description: string;
+  options: string[];
   startDate: number;
   expDate: number;
-  options: string[];
 };
 
 type Ctx = NarrowedContext<

@@ -38,7 +38,7 @@ const chooseRequirementAction = async (ctx: any): Promise<void> => {
     } = msg;
     const [requrementInfo, requrementId] = data.split(";");
 
-    pollStorage.saveReqId(chatId, requrementId);
+    pollStorage.saveReqId(chatId, +requrementId);
 
     const [name, chain] = requrementInfo.split("-");
 
@@ -53,11 +53,29 @@ const chooseRequirementAction = async (ctx: any): Promise<void> => {
 
     await Bot.Client.sendMessage(
       chatId,
-      "Please give me the subject of the poll. For example:\n" +
+      "Please give me the question/subject of the poll. For example:\n" +
         '"Do you think drinking milk is cool?"'
     );
   } catch (err) {
     logger.error(err);
+  }
+};
+
+const pollDescriptionAction = async (ctx: any): Promise<void> => {
+  const {
+    from: { id: userId },
+    data
+  } = ctx.update.callback_query;
+
+  if (data.split(";")[1] === "yes") {
+    pollStorage.setUserStep(userId, 2);
+
+    await ctx.reply("Please give me the description of your poll.");
+  } else {
+    pollStorage.savePollDescription(userId, undefined);
+    pollStorage.setUserStep(userId, 3);
+
+    await ctx.reply("Please give me the first option of your poll.");
   }
 };
 
@@ -88,7 +106,10 @@ const voteAction = async (ctx: any): Promise<void> => {
       `${config.backendUrl}/poll/results/${pollId}`
     );
 
-    const newPollText = await createPollText(poll, results);
+    const newPollText = await createPollText(
+      { platformId: chatId, ...poll },
+      results
+    );
 
     if (pollText.trim() === newPollText.trim()) {
       return;
@@ -126,5 +147,6 @@ export {
   confirmLeaveCommunityAction,
   confirmedLeaveCommunityAction,
   chooseRequirementAction,
+  pollDescriptionAction,
   voteAction
 };
