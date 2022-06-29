@@ -247,7 +247,7 @@ const statusUpdateCommand = async (ctx: Ctx): Promise<void> => {
 };
 
 const groupIdCommand = async (ctx: Ctx): Promise<void> => {
-  ctx.reply(String(ctx.update.message.chat.id), {
+  ctx.replyWithMarkdown(`\`${ctx.update.message.chat.id}\``, {
     reply_to_message_id: ctx.update.message.message_id
   });
 };
