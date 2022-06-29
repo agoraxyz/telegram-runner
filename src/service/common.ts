@@ -1,8 +1,10 @@
 import axios from "axios";
+import { isMember } from "../api/actions";
 import { CommunityResult } from "../api/types";
 import Bot from "../Bot";
 import config from "../config";
 import logger from "../utils/logger";
+import { SuccessResult } from "./types";
 
 const getGroupName = async (groupId: number): Promise<string> => {
   const group = (await Bot.Client.getChat(groupId)) as { title: string };
@@ -56,8 +58,8 @@ const leaveCommunity = async (
 const kickUser = async (
   groupId: number,
   userId: number,
-  reason: string
-): Promise<void> => {
+  reason?: string
+): Promise<SuccessResult> => {
   logger.verbose({
     message: "kickUser",
     meta: { groupId, userId, reason }
@@ -72,13 +74,26 @@ const kickUser = async (
       await Bot.Client.sendMessage(
         userId,
         "You have been kicked from the group " +
-          `${groupName}, because you ${reason}.`
+          `${groupName}${reason ? `, because you ${reason}` : ""}.`
       );
+
+      return {
+        success: await isMember(groupId.toString(), userId),
+        errorMsg: null
+      };
     } catch (_) {
-      logger.warn(`The bot can't initiate conversation with user "${userId}"`);
+      const errorMsg = `The bot can't initiate conversation with user "${userId}"`;
+
+      logger.warn(errorMsg);
+
+      return { success: await isMember(groupId.toString(), userId), errorMsg };
     }
   } catch (err) {
-    logger.error(err);
+    const errorMsg = err.response?.description;
+
+    logger.error(errorMsg);
+
+    return { success: false, errorMsg };
   }
 };
 
