@@ -5,9 +5,10 @@ type ManageGroupsParam = {
   message       : string;
 };
 
+// prettier-ignore
 type IsMemberParam = {
   platformUserId: number;
-  groupIds: string[];
+  groupIds:       string[];
 };
 
 // prettier-ignore
@@ -84,6 +85,16 @@ type RoleEventResponse =
     }
   | { success: boolean };
 
+// prettier-ignore
+type OauthData = {
+  id        : number;
+  first_name: string;
+  username  : string;
+  photo_url : string;
+  auth_date : number;
+  hash      : string;
+};
+
 export {
   ManageGroupsParam,
   IsMemberParam,
@@ -95,5 +106,6 @@ export {
   GuildEventParams,
   GuildEventResponse,
   RoleEventParams,
-  RoleEventResponse
+  RoleEventResponse,
+  OauthData
 };
