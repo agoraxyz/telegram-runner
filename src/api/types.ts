@@ -35,11 +35,65 @@ type IsInResult =
       ok: true;
     };
 
+type AccessEventParams = {
+  action: "ADD" | "REMOVE";
+  platformUserId: string;
+  platformGuildId: string;
+  guildName: string;
+  platformGuildData: { inviteChannel: string };
+  roles: {
+    roleName: string;
+    platformRoleId: string;
+    platformRoleData?: {
+      isGuarded?: boolean;
+    };
+  }[];
+};
+
+type GuildEventParams = {
+  action: "CREATE" | "UPDATE" | "DELETE";
+  guildName: string;
+  platformGuildId: string;
+  platformGuildData?: { inviteChannel?: string };
+};
+
+type GuildEventResponse =
+  | {
+      platformGuildId: string;
+      platformGuildData: { inviteChannel: string };
+    }
+  | { success: boolean };
+
+type RoleEventParams = {
+  action: "CREATE" | "UPDATE" | "DELETE";
+  roleName: string;
+  platformGuildId: string;
+  platformGuildData: { inviteChannel: string };
+  platformRoleId?: string;
+  platformRoleData?: {
+    isGuarded?: boolean;
+    gatedChannels?: string[];
+    grantAccessToExistingUsers: boolean;
+  };
+};
+
+type RoleEventResponse =
+  | {
+      platformGuildData: { inviteChannel: string };
+      platformRoleId: string;
+    }
+  | { success: boolean };
+
 export {
   ManageGroupsParam,
   IsMemberParam,
   CommunityResult,
   LevelInfo,
   ErrorResult,
-  IsInResult
+  IsInResult,
+  AccessEventParams,
+  GuildEventParams,
+  GuildEventResponse,
+  RoleEventParams,
+  RoleEventResponse
 };
