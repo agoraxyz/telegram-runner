@@ -1,4 +1,4 @@
-import crypto from "crypto";
+import { createHash, createHmac } from "crypto";
 import config from "../config";
 import { getGenericInvite, kickUser } from "../service/common";
 import { SuccessResult } from "../service/types";
@@ -8,16 +8,17 @@ import {
   AccessEventParams,
   GuildEventParams,
   GuildEventResponse,
+  OauthData,
   RoleEventParams,
   RoleEventResponse
 } from "./types";
 
 const service = {
-  access: async (payload: AccessEventParams[]): Promise<SuccessResult[]> => {
-    logger.verbose({ message: "access params", meta: payload });
+  access: async (params: AccessEventParams[]): Promise<SuccessResult[]> => {
+    logger.verbose({ message: "access params", meta: params });
 
     const result = await Promise.all(
-      payload.map(async (item) => {
+      params.map(async (item) => {
         const { action, platformUserId, platformGuildId } = item;
 
         return action === "REMOVE"
@@ -34,10 +35,10 @@ const service = {
     return result;
   },
 
-  guild: async (payload: GuildEventParams): Promise<GuildEventResponse> => {
-    logger.verbose({ message: "guild params", meta: payload });
+  guild: async (params: GuildEventParams): Promise<GuildEventResponse> => {
+    logger.verbose({ message: "guild params", meta: params });
 
-    const { platformGuildId } = payload;
+    const { platformGuildId } = params;
 
     const result = {
       platformGuildId,
@@ -49,10 +50,10 @@ const service = {
     return result;
   },
 
-  role: async (payload: RoleEventParams): Promise<RoleEventResponse> => {
-    logger.verbose({ message: "role params", meta: payload });
+  role: async (params: RoleEventParams): Promise<RoleEventResponse> => {
+    logger.verbose({ message: "role params", meta: params });
 
-    const { platformRoleId } = payload;
+    const { platformRoleId } = params;
 
     const result = {
       platformGuildData: { inviteChannel: null },
@@ -76,26 +77,30 @@ const service = {
     return result;
   },
 
-  resolveUser: async (payload) => {
-    logger.verbose({ message: "resolveUser params", meta: payload });
+  resolveUser: async (params) => {
+    logger.verbose({ message: "resolveUser params", meta: params });
 
-    const { auth_date, first_name, hash, id, username } = payload.user;
-
-    const data_check_string = `auth_date=${auth_date}\nfirst_name=${first_name}\nid=${id}\nusername=${username}`;
-    const secret_key = crypto
-      .createHash("sha256")
+    const hashOfToken = createHash("sha256")
       .update(config.telegramToken)
-      .digest("hex");
-    const hashed = crypto
-      .createHmac("sha256", secret_key)
-      .update(data_check_string)
-      .digest("hex");
+      .digest();
 
-    logger.debug(hash);
-    logger.debug(hashed);
+    const verify = (oauthData: OauthData) => {
+      const { hash, ...rest } = oauthData;
+
+      const hashRecreation = createHmac("sha256", hashOfToken)
+        .update(
+          Object.entries(rest)
+            .map(([key, value]) => `${key}=${value}`)
+            .sort()
+            .join("\n")
+        )
+        .digest("hex");
+
+      return hash === hashRecreation;
+    };
 
     const result = {
-      platformUserId: hashed === hash ? id : null,
+      platformUserId: verify(params.user) ? params.user.id : null,
       platformUserData: null
     };
 
