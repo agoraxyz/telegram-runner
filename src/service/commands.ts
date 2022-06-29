@@ -215,7 +215,7 @@ const statusUpdateCommand = async (ctx: Ctx): Promise<void> => {
 
   try {
     await ctx.reply(
-      "I'll update your community accesses as soon as possible. (It could take up to 1 minutes.)"
+      "I'll update your community accesses as soon as possible. (It could take up to 1 minute.)"
     );
 
     const statusResponse = await Main.platform.user.status(
