@@ -5,6 +5,16 @@ import validators from "./validators";
 const createRouter = () => {
   const router: Router = Router();
 
+  router.post("/access", controller.access);
+
+  router.post("/guild", controller.guild);
+
+  router.post("/role", controller.role);
+
+  router.get("/info/:platformGuildId", controller.info);
+
+  router.post("/resolveUser", controller.resolveUser);
+
   router.post(
     "/upgrade",
     [
