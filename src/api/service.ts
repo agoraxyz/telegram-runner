@@ -4,9 +4,16 @@ import { kickUser } from "../service/common";
 import { SuccessResult } from "../service/types";
 import logger from "../utils/logger";
 import { getGroupName, isMember } from "./actions";
+import {
+  AccessEventParams,
+  GuildEventParams,
+  GuildEventResponse,
+  RoleEventParams,
+  RoleEventResponse
+} from "./types";
 
 const service = {
-  access: async (payload): Promise<SuccessResult[]> => {
+  access: async (payload: AccessEventParams[]): Promise<SuccessResult[]> => {
     logger.verbose({ message: "access params", meta: payload });
 
     const result = await Promise.all(
@@ -14,9 +21,9 @@ const service = {
         const { action, platformUserId, platformGuildId } = item;
 
         return action === "REMOVE"
-          ? kickUser(platformGuildId, platformUserId)
+          ? kickUser(+platformGuildId, +platformUserId)
           : {
-              success: await isMember(platformGuildId, platformUserId),
+              success: await isMember(platformGuildId, +platformUserId),
               errorMsg: null
             };
       })
@@ -27,22 +34,30 @@ const service = {
     return result;
   },
 
-  guild: async (payload) => {
+  guild: async (payload: GuildEventParams): Promise<GuildEventResponse> => {
     logger.verbose({ message: "guild params", meta: payload });
 
-    const { platformGuildId, platformGuildData } = payload;
+    const { platformGuildId } = payload;
 
-    const result = { platformGuildId, platformGuildData };
+    const result = {
+      platformGuildId,
+      platformGuildData: { inviteChannel: null }
+    };
 
     logger.verbose({ message: "guild result", meta: result });
 
     return result;
   },
 
-  role: async (payload) => {
+  role: async (payload: RoleEventParams): Promise<RoleEventResponse> => {
     logger.verbose({ message: "role params", meta: payload });
 
-    const result = true;
+    const { platformRoleId } = payload;
+
+    const result = {
+      platformGuildData: { inviteChannel: null },
+      platformRoleId
+    };
 
     logger.verbose({ message: "role result", meta: result });
 
