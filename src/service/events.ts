@@ -157,7 +157,7 @@ const channelPostUpdate = async (
   switch (post.text) {
     case "/poll": {
       await initPoll(ctx);
-      await Bot.Client.deleteMessage(channelId, post.message_id);
+      await Bot.client.deleteMessage(channelId, post.message_id);
 
       break;
     }
@@ -250,7 +250,7 @@ const chatMemberUpdate = async (
       if (invLink) {
         const { invite_link } = invLink;
 
-        const bot = await Bot.Client.getMe();
+        const bot = await Bot.client.getMe();
 
         if (invLink.creator.id === bot.id) {
           logger.verbose({

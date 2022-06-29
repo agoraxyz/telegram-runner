@@ -42,7 +42,7 @@ const chooseRequirementAction = async (ctx: any): Promise<void> => {
 
     const [name, chain] = requrementInfo.split("-");
 
-    await Bot.Client.editMessageText(
+    await Bot.client.editMessageText(
       chatId,
       message_id,
       undefined,
@@ -51,7 +51,7 @@ const chooseRequirementAction = async (ctx: any): Promise<void> => {
 
     pollStorage.setUserStep(chatId, 1);
 
-    await Bot.Client.sendMessage(
+    await Bot.client.sendMessage(
       chatId,
       "Please give me the question/subject of the poll. For example:\n" +
         '"Do you think drinking milk is cool?"'
@@ -123,7 +123,7 @@ const voteAction = async (ctx: any): Promise<void> => {
     ]);
 
     try {
-      await Bot.Client.editMessageText(
+      await Bot.client.editMessageText(
         chatId,
         msg.message_id,
         undefined,

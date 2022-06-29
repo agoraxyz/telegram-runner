@@ -17,7 +17,7 @@ const isMember = async (
       throw new Error(`PlatformUserId doesn't exists for ${platformUserId}.`);
     }
 
-    const member = await Bot.Client.getChatMember(groupId, +platformUserId);
+    const member = await Bot.client.getChatMember(groupId, +platformUserId);
 
     return member !== undefined && member.status === "member";
   } catch (_) {
@@ -37,9 +37,9 @@ const generateInvite = async (
     });
 
     if (!isTelegramUser && platformUserId) {
-      await Bot.Client.unbanChatMember(groupId, +platformUserId);
+      await Bot.client.unbanChatMember(groupId, +platformUserId);
 
-      const { invite_link } = await Bot.Client.createChatInviteLink(groupId, {
+      const { invite_link } = await Bot.client.createChatInviteLink(groupId, {
         member_limit: 1
       });
 
@@ -98,7 +98,7 @@ const manageGroups = async (
 
     if (invites.length) {
       try {
-        await Bot.Client.sendMessage(
+        await Bot.client.sendMessage(
           platformUserId,
           `You have unlocked ${invites.length} new groups:`,
           Markup.inlineKeyboard(
@@ -140,7 +140,7 @@ const manageGroups = async (
 
 const isIn = async (groupId: number): Promise<IsInResult> => {
   try {
-    const chat = await Bot.Client.getChat(groupId);
+    const chat = await Bot.client.getChat(groupId);
 
     if (!["supergroup", "channel"].includes(chat.type)) {
       return {
@@ -151,8 +151,8 @@ const isIn = async (groupId: number): Promise<IsInResult> => {
       };
     }
 
-    const botId = (await Bot.Client.getMe()).id;
-    const membership = await Bot.Client.getChatMember(groupId, botId);
+    const botId = (await Bot.client.getMe()).id;
+    const membership = await Bot.client.getChatMember(groupId, botId);
 
     if (membership.status !== "administrator") {
       return {
@@ -205,7 +205,7 @@ const isIn = async (groupId: number): Promise<IsInResult> => {
 };
 
 const getUser = async (platformUserId: number) => {
-  const chat = await Bot.Client.getChat(platformUserId);
+  const chat = await Bot.client.getChat(platformUserId);
 
   if (chat?.photo?.small_file_id) {
     const fileInfo = await axios.get(

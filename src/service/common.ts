@@ -7,10 +7,13 @@ import logger from "../utils/logger";
 import { SuccessResult } from "./types";
 
 const getGroupName = async (groupId: number): Promise<string> => {
-  const group = (await Bot.Client.getChat(groupId)) as { title: string };
+  const group = (await Bot.client.getChat(groupId)) as { title: string };
 
   return group.title;
 };
+
+const getGenericInvite = async (groupId: number): Promise<string> =>
+  `https://t.me/${Bot.info.username}?start=${groupId}`;
 
 const fetchCommunitiesOfUser = async (
   platformUserId: number
@@ -21,7 +24,7 @@ const fetchCommunitiesOfUser = async (
   });
 
   const res = await axios.get(
-    `${config.backendUrl}/communities/${platformUserId}`
+    `${config.backendUrl} /communities/${platformUserId} `
   );
 
   return (res.data as CommunityResult[]).filter(
@@ -40,7 +43,7 @@ const leaveCommunity = async (
 
   try {
     const res = await axios.post(
-      `${config.backendUrl}/user/removeFromPlatform`,
+      `${config.backendUrl} /user/removeFromPlatform`,
       {
         platformUserId,
         platform: config.platform,
@@ -66,12 +69,12 @@ const kickUser = async (
   });
 
   try {
-    await Bot.Client.banChatMember(groupId, +userId);
+    await Bot.client.banChatMember(groupId, +userId);
 
     const groupName = await getGroupName(groupId);
 
     try {
-      await Bot.Client.sendMessage(
+      await Bot.client.sendMessage(
         userId,
         "You have been kicked from the group " +
           `${groupName}${reason ? `, because you ${reason}` : ""}.`
@@ -100,14 +103,14 @@ const kickUser = async (
 const sendMessageForSupergroup = async (groupId: number) => {
   const groupName = await getGroupName(groupId);
 
-  await Bot.Client.sendMessage(
+  await Bot.client.sendMessage(
     groupId,
     `This is the group ID of "${groupName}": \`${groupId}\` .\n` +
       "Paste it to the Guild creation interface!",
     { parse_mode: "Markdown" }
   );
-  await Bot.Client.sendPhoto(groupId, config.assets.groupIdImage);
-  await Bot.Client.sendMessage(
+  await Bot.client.sendPhoto(groupId, config.assets.groupIdImage);
+  await Bot.client.sendMessage(
     groupId,
     "It is critically important to *set Group type to 'Private Group'* to create a functioning Guild",
     { parse_mode: "Markdown" }
@@ -115,26 +118,27 @@ const sendMessageForSupergroup = async (groupId: number) => {
 };
 
 const sendNotASuperGroup = async (groupId: number) => {
-  await Bot.Client.sendMessage(
+  await Bot.client.sendMessage(
     groupId,
     "This Group is currently not a Supergroup.\n" +
       "Please make sure to enable *all of the admin rights* for the bot.",
     { parse_mode: "Markdown" }
   );
-  await Bot.Client.sendAnimation(groupId, config.assets.adminVideo);
+  await Bot.client.sendAnimation(groupId, config.assets.adminVideo);
 };
 
 const sendNotAnAdministrator = async (groupId: number) => {
-  await Bot.Client.sendMessage(
+  await Bot.client.sendMessage(
     groupId,
     "Please make sure to enable *all of the admin rights* for the bot.",
     { parse_mode: "Markdown" }
   );
-  await Bot.Client.sendAnimation(groupId, config.assets.adminVideo);
+  await Bot.client.sendAnimation(groupId, config.assets.adminVideo);
 };
 
 export {
   getGroupName,
+  getGenericInvite,
   fetchCommunitiesOfUser,
   leaveCommunity,
   kickUser,

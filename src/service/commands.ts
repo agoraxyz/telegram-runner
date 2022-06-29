@@ -2,7 +2,6 @@ import axios, { AxiosResponse } from "axios";
 import { Markup } from "telegraf";
 import { InlineKeyboardButton } from "telegraf/types";
 import dayjs from "dayjs";
-import { LevelInfo } from "../api/types";
 import Bot from "../Bot";
 import { generateInvite } from "../api/actions";
 import { fetchCommunitiesOfUser, getGroupName } from "./common";
@@ -16,6 +15,7 @@ import {
 } from "../utils/utils";
 import pollStorage from "./pollStorage";
 import { Ctx } from "./types";
+import Main from "../Main";
 
 const helpCommand = (ctx: Ctx): void => {
   const helpHeader =
@@ -195,7 +195,7 @@ const pingCommand = async (ctx: Ctx): Promise<void> => {
   const currTime = new Date().getTime();
 
   try {
-    const sender = await Bot.Client.getChatMember(
+    const sender = await Bot.client.getChatMember(
       platformUserId,
       platformUserId
     );
@@ -215,33 +215,29 @@ const statusUpdateCommand = async (ctx: Ctx): Promise<void> => {
 
   try {
     await ctx.reply(
-      "I'll update your community accesses as soon as possible. (It could take up to 2 minutes.)"
+      "I'll update your community accesses as soon as possible. (It could take up to 1 minutes.)"
     );
 
-    const res = await axios.post(
-      `${config.backendUrl}/user/statusUpdate/`,
-      {
-        telegramId: platformUserId
-      },
-      { timeout: 150000 }
+    const statusResponse = await Main.platform.user.status(
+      platformUserId.toString()
     );
+    console.log(statusResponse);
 
-    if (typeof res.data !== "string") {
-      await ctx.reply(
-        "Currently you should get access to these Communities below: "
-      );
-
-      await Promise.all(
-        res.data.map(async (c: LevelInfo) => {
-          await ctx.reply(
-            `Community Name: ${c.name}, Levels: ${c.levels.join()}`
-          );
-        })
-      );
+    let replyMsg: string;
+    if (statusResponse?.length === 0) {
+      replyMsg =
+        "It looks like you haven't joined any guilds that gate Telegram.";
     } else {
-      await ctx.reply("There is no such User with this telegramId.");
+      replyMsg = `Currently you should have access to these groups:\n${statusResponse
+        .map((sr) => sr.platformGuildName || sr.platformGuildName)
+        .join("\n")}`;
     }
+
+    await ctx.reply(replyMsg);
   } catch (err) {
+    await ctx.reply(
+      `Cannot update your status. (${err.message})\nJoined any guilds?`
+    );
     logger.error(err);
   }
 };
@@ -322,14 +318,14 @@ const doneCommand = async (ctx: Ctx): Promise<void> => {
 
       pollStorage.deleteMemory(userId);
 
-      await Bot.Client.sendMessage(userId, "The poll has been created.");
+      await Bot.client.sendMessage(userId, "The poll has been created.");
     } else {
       ctx.reply("You don't have an active poll creation process.");
     }
   } catch (err) {
     pollStorage.deleteMemory(userId);
 
-    await Bot.Client.sendMessage(
+    await Bot.client.sendMessage(
       userId,
       "There was an error while creating the poll."
     );
@@ -337,7 +333,7 @@ const doneCommand = async (ctx: Ctx): Promise<void> => {
     const errorMessage = extractBackendErrorMessage(err);
 
     if (errorMessage === "Poll can't be created for this guild.") {
-      await Bot.Client.sendMessage(userId, errorMessage);
+      await Bot.client.sendMessage(userId, errorMessage);
     }
 
     logger.error(err);
@@ -365,14 +361,14 @@ const resetCommand = async (ctx: Ctx): Promise<void> => {
         return;
       }
 
-      await Bot.Client.sendMessage(
+      await Bot.client.sendMessage(
         userId,
         "The current poll creation procedure has been restarted."
       );
 
       await sendPollTokenChooser(ctx, userId, guildIdRes.data.id);
     } else {
-      await Bot.Client.sendMessage(
+      await Bot.client.sendMessage(
         userId,
         "You don't have an active poll creation process."
       );
@@ -389,12 +385,12 @@ const cancelCommand = async (ctx: Ctx): Promise<void> => {
     if (pollStorage.getPoll(userId)) {
       pollStorage.deleteMemory(userId);
 
-      await Bot.Client.sendMessage(
+      await Bot.client.sendMessage(
         userId,
         "The current poll creation process has been cancelled."
       );
     } else {
-      await Bot.Client.sendMessage(
+      await Bot.client.sendMessage(
         userId,
         "You don't have an active poll creation process."
       );

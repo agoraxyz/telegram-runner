@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import config from "../config";
-import { kickUser } from "../service/common";
+import { getGenericInvite, kickUser } from "../service/common";
 import { SuccessResult } from "../service/types";
 import logger from "../utils/logger";
 import { getGroupName, isMember } from "./actions";
@@ -65,10 +65,11 @@ const service = {
   },
 
   info: async (platformGuildId: string) => {
-    logger.verbose({ message: "info params", meta: platformGuildId });
+    logger.verbose({ message: "info params", meta: { platformGuildId } });
 
     const name = await getGroupName(+platformGuildId);
-    const result = { name, invite: null };
+    const invite = await getGenericInvite(+platformGuildId);
+    const result = { name, invite };
 
     logger.verbose({ message: "info result", meta: result });
 

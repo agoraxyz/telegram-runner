@@ -1,20 +1,19 @@
 import { Telegraf, Telegram } from "telegraf";
+import { UserFromGetMe } from "telegraf/types";
 import * as TGActions from "./service/actions";
 import * as TGCommands from "./service/commands";
 import * as TGEvents from "./service/events";
 import logger from "./utils/logger";
 
 export default class Bot {
-  private static tg: Telegram;
+  public static client: Telegram;
 
-  static get Client(): Telegram {
-    return this.tg;
-  }
+  public static info: UserFromGetMe;
 
   static setup(token: string): void {
     const bot = new Telegraf(token);
 
-    this.tg = bot.telegram;
+    this.client = bot.telegram;
 
     // registering middleware to log the duration of updates
     bot.use(async (_, next) => {
@@ -63,16 +62,20 @@ export default class Bot {
     bot.action(/;Vote$/, TGActions.voteAction);
 
     // starting the bot
-    bot.launch({
-      allowedUpdates: [
-        "chat_member",
-        "my_chat_member",
-        "message",
-        "channel_post",
-        "chosen_inline_result",
-        "callback_query"
-      ]
-    });
+    bot
+      .launch({
+        allowedUpdates: [
+          "chat_member",
+          "my_chat_member",
+          "message",
+          "channel_post",
+          "chosen_inline_result",
+          "callback_query"
+        ]
+      })
+      .then(() => {
+        this.info = bot.botInfo;
+      });
 
     // logging middleware for bot errors
     bot.catch((err) => {

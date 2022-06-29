@@ -106,7 +106,7 @@ const sendPollTokenChooser = async (
   );
 
   if (requirements.length === 0) {
-    await Bot.Client.sendMessage(
+    await Bot.client.sendMessage(
       platformUserId,
       "Your guild doesn't support polls."
     );
@@ -128,7 +128,7 @@ const sendPollTokenChooser = async (
   const group = (await ctx.getChat()) as { type: string; title: string };
   const chatType = group.type;
 
-  await Bot.Client.sendMessage(
+  await Bot.client.sendMessage(
     platformUserId,
     `You are creating a token-weighted poll in the ${chatType} "${group.title}".\n\n` +
       "You can use /reset or /cancel to restart or stop the process at any time.\n" +
@@ -152,7 +152,7 @@ const initPoll = async (ctx: any): Promise<void> => {
     if (update.channel_post) {
       chatId = update.channel_post.chat.id;
 
-      const creatorId = (await Bot.Client.getChatAdministrators(chatId))
+      const creatorId = (await Bot.client.getChatAdministrators(chatId))
         .filter((admin) => admin.status === "creator")
         .map((admin) => admin.user.id)[0];
 
@@ -162,7 +162,7 @@ const initPoll = async (ctx: any): Promise<void> => {
       userId = update.message.from.id;
     }
 
-    const chatMember = await Bot.Client.getChatMember(chatId, userId);
+    const chatMember = await Bot.client.getChatMember(chatId, userId);
 
     const guildIdRes = await axios.get(
       `${config.backendUrl}/guild/platformId/${chatId}`
@@ -300,7 +300,7 @@ const sendPollMessage = async (
     ]);
 
   const msgId = (
-    await Bot.Client.sendMessage(platformId, pollText, {
+    await Bot.client.sendMessage(platformId, pollText, {
       parse_mode: "Markdown",
       reply_markup: {
         inline_keyboard: voteButtonRow
@@ -316,7 +316,7 @@ const pollBuildResponse = async (userId: number): Promise<boolean> => {
 
   if (poll) {
     if (poll.requirementId === 0) {
-      await Bot.Client.sendMessage(
+      await Bot.client.sendMessage(
         userId,
         "You must choose a token for weighting."
       );
@@ -325,13 +325,13 @@ const pollBuildResponse = async (userId: number): Promise<boolean> => {
     }
 
     if (poll.question === "") {
-      await Bot.Client.sendMessage(userId, "The poll must have a question.");
+      await Bot.client.sendMessage(userId, "The poll must have a question.");
 
       return true;
     }
 
     if (poll.options.length <= 1) {
-      await Bot.Client.sendMessage(
+      await Bot.client.sendMessage(
         userId,
         "The poll must have at least two options."
       );
@@ -340,7 +340,7 @@ const pollBuildResponse = async (userId: number): Promise<boolean> => {
     }
 
     if (poll.expDate === "") {
-      await Bot.Client.sendMessage(
+      await Bot.client.sendMessage(
         userId,
         "The poll must have an expriation date."
       );
@@ -348,7 +348,7 @@ const pollBuildResponse = async (userId: number): Promise<boolean> => {
       return true;
     }
   } else {
-    await Bot.Client.sendMessage(
+    await Bot.client.sendMessage(
       userId,
       "You don't have an active poll creation process."
     );

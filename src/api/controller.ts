@@ -16,9 +16,10 @@ const controller = {
     }
 
     try {
-      const result = await service.access(req.body.payload);
+      const result = await service.access(req.body);
       res.status(200).json(result);
     } catch (err) {
+      logger.verbose(err);
       res.status(400).json(getErrorResult(err));
     }
   },
@@ -32,9 +33,10 @@ const controller = {
     }
 
     try {
-      const result = await service.guild(req.body.payload);
+      const result = await service.guild(req.body);
       res.status(200).json(result);
     } catch (err) {
+      logger.verbose(err);
       res.status(400).json(getErrorResult(err));
     }
   },
@@ -48,7 +50,7 @@ const controller = {
     }
 
     try {
-      const result = await service.role(req.body.payload);
+      const result = await service.role(req.body);
       res.status(200).json(result);
     } catch (err) {
       res.status(400).json(getErrorResult(err));
@@ -67,6 +69,7 @@ const controller = {
       const result = await service.info(req.params.platformGuildId);
       res.status(200).json(result);
     } catch (err) {
+      logger.verbose(err);
       res.status(400).json(getErrorResult(err));
     }
   },
@@ -80,9 +83,10 @@ const controller = {
     }
 
     try {
-      const result = await service.resolveUser(req.body.payload);
+      const result = await service.resolveUser(req.body);
       res.status(200).json(result);
     } catch (err) {
+      logger.verbose(err);
       res.status(400).json(getErrorResult(err));
     }
   },
