@@ -221,7 +221,6 @@ const statusUpdateCommand = async (ctx: Ctx): Promise<void> => {
     const statusResponse = await Main.platform.user.status(
       platformUserId.toString()
     );
-    console.log(statusResponse);
 
     let replyMsg: string;
     if (statusResponse?.length === 0) {

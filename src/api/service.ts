@@ -21,12 +21,20 @@ const service = {
       params.map(async (item) => {
         const { action, platformUserId, platformGuildId } = item;
 
-        return action === "REMOVE"
-          ? kickUser(+platformGuildId, +platformUserId)
-          : {
+        try {
+          if (action === "ADD") {
+            return {
               success: await isMember(platformGuildId, +platformUserId),
               errorMsg: null
             };
+          }
+          return await kickUser(+platformGuildId, +platformUserId);
+        } catch (error) {
+          return {
+            success: false,
+            errorMsg: error.message
+          };
+        }
       })
     );
 
@@ -84,8 +92,8 @@ const service = {
       .update(config.telegramToken)
       .digest();
 
-    const verify = (oauthData: OauthData) => {
-      const { hash, ...rest } = oauthData;
+    const verify = (authData: OauthData) => {
+      const { hash, ...rest } = authData;
 
       const hashRecreation = createHmac("sha256", hashOfToken)
         .update(
@@ -100,7 +108,7 @@ const service = {
     };
 
     const result = {
-      platformUserId: verify(params.user) ? params.user.id : null,
+      platformUserId: verify(params) ? params.id : null,
       platformUserData: null
     };
 
