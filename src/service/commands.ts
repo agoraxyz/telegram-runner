@@ -54,7 +54,7 @@ const startCommand = async (ctx: Ctx): Promise<void> => {
   const { message } = ctx;
 
   if (message.chat.id > 0) {
-    const groupIdRegex = /\/start ([0-9]*)/;
+    const groupIdRegex = /\/start (-[0-9]*)/;
     const found = message.text.match(groupIdRegex);
 
     if (found) {
