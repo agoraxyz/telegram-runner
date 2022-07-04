@@ -1,11 +1,4 @@
 // prettier-ignore
-type ManageGroupsParam = {
-  platformUserId: number;
-  groupIds      : string[];
-  message       : string;
-};
-
-// prettier-ignore
 type IsMemberParam = {
   platformUserId: number;
   groupIds:       string[];
@@ -96,7 +89,6 @@ type OauthData = {
 };
 
 export {
-  ManageGroupsParam,
   IsMemberParam,
   CommunityResult,
   LevelInfo,

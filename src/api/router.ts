@@ -16,26 +16,6 @@ const createRouter = () => {
   router.post("/resolveUser", controller.resolveUser);
 
   router.post(
-    "/upgrade",
-    [
-      validators.bodyPlatformUserId,
-      validators.groupsValidator,
-      validators.messageValidator
-    ],
-    controller.upgrade
-  );
-
-  router.post(
-    "/downgrade",
-    [
-      validators.bodyPlatformUserId,
-      validators.groupsValidator,
-      validators.messageValidator
-    ],
-    controller.downgrade
-  );
-
-  router.post(
     "/isMember",
     [validators.bodyPlatformUserId, validators.groupsValidator],
     controller.isMember

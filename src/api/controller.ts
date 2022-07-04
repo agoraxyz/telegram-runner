@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { validationResult } from "express-validator";
-import { getGroupName, getUser, isIn, isMember, manageGroups } from "./actions";
-import { IsMemberParam, ManageGroupsParam } from "./types";
+import { getGroupName, getUser, isIn, isMember } from "./actions";
+import { IsMemberParam } from "./types";
 import { getErrorResult, sendPollMessage } from "../utils/utils";
 import logger from "../utils/logger";
 import { service } from "./service";
@@ -87,42 +87,6 @@ const controller = {
       res.status(200).json(result);
     } catch (err) {
       logger.verbose(err);
-      res.status(400).json(getErrorResult(err));
-    }
-  },
-
-  upgrade: async (req: Request, res: Response): Promise<void> => {
-    const errors = validationResult(req);
-
-    if (!errors.isEmpty()) {
-      res.status(400).json({ errors: errors.array() });
-      return;
-    }
-
-    const params: ManageGroupsParam = req.body;
-
-    try {
-      const result = await manageGroups(params, true);
-      res.status(200).json(result);
-    } catch (err) {
-      res.status(400).json(getErrorResult(err));
-    }
-  },
-
-  downgrade: async (req: Request, res: Response): Promise<void> => {
-    const errors = validationResult(req);
-
-    if (!errors.isEmpty()) {
-      res.status(400).json({ errors: errors.array() });
-      return;
-    }
-
-    const params: ManageGroupsParam = req.body;
-
-    try {
-      const result = await manageGroups(params, false);
-      res.status(200).json(result);
-    } catch (err) {
       res.status(400).json(getErrorResult(err));
     }
   },

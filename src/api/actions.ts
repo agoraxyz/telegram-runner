@@ -1,8 +1,7 @@
-import { Markup } from "telegraf";
 import axios from "axios";
-import { getGroupName, kickUser } from "../service/common";
+import { getGroupName } from "../service/common";
 import Bot from "../Bot";
-import { IsInResult, ManageGroupsParam } from "./types";
+import { IsInResult } from "./types";
 import logger from "../utils/logger";
 import config from "../config";
 
@@ -30,112 +29,23 @@ const generateInvite = async (
   platformUserId: number
 ): Promise<string | undefined> => {
   try {
-    const isTelegramUser = await isMember(groupId, platformUserId);
-    logger.verbose({
-      message: "generateInvite",
-      meta: { groupId, platformUserId }
-    });
-
-    if (!isTelegramUser && platformUserId) {
+    try {
       await Bot.client.unbanChatMember(groupId, +platformUserId);
-
-      const { invite_link } = await Bot.client.createChatInviteLink(groupId, {
-        member_limit: 1
-      });
-
-      return invite_link;
-    }
-
-    return undefined;
-  } catch (err) {
-    logger.error(err);
-
-    return undefined;
-  }
-};
-
-const manageGroups = async (
-  params: ManageGroupsParam,
-  isUpgrade: boolean
-): Promise<boolean> => {
-  logger.verbose({ message: "manageGroups", meta: { params, isUpgrade } });
-
-  const { platformUserId } = params;
-
-  let result: boolean = true;
-
-  if (!platformUserId) {
-    throw new Error(`PlatformUserId doesn't exists for ${platformUserId}.`);
-  }
-
-  if (isUpgrade) {
-    const invites: { link: string; name: string }[] = [];
-
-    await Promise.all(
-      params.groupIds.map(async (groupId) => {
-        const member = await isMember(groupId, platformUserId);
-
-        try {
-          if (!member) {
-            const inviteLink = await generateInvite(groupId, platformUserId);
-
-            if (inviteLink !== undefined) {
-              invites.push({
-                link: inviteLink,
-                name: await getGroupName(+groupId)
-              });
-            }
-          } else {
-            result = false;
-          }
-        } catch (err) {
-          logger.error(err);
-
-          result = false;
-        }
-      })
-    );
-
-    if (invites.length) {
-      try {
-        await Bot.client.sendMessage(
-          platformUserId,
-          `You have unlocked ${invites.length} new groups:`,
-          Markup.inlineKeyboard(
-            invites.map((inv) => [Markup.button.url(inv.name, inv.link)])
-          )
-        );
-      } catch (err) {
-        logger.error(err);
-
-        result = false;
+    } catch (error) {
+      if (error.message !== "400: Bad Request: can't remove chat owner") {
+        throw error;
       }
     }
-  } else {
-    try {
-      await Promise.all(
-        params.groupIds.map(async (groupId) => {
-          const member = await isMember(groupId, platformUserId);
 
-          if (member) {
-            kickUser(
-              +groupId,
-              platformUserId,
-              "have not fullfilled the requirements or left the guild through our website"
-            );
-          } else {
-            result = false;
-          }
-        })
-      );
-    } catch (err) {
-      logger.error(err);
+    const { invite_link } = await Bot.client.createChatInviteLink(groupId, {
+      member_limit: 1
+    });
 
-      result = false;
-    }
+    return invite_link;
+  } catch (err) {
+    logger.error(err);
+    return undefined;
   }
-
-  return result;
 };
 
 const isIn = async (groupId: number): Promise<IsInResult> => {
@@ -232,4 +142,4 @@ const getUser = async (platformUserId: number) => {
   };
 };
 
-export { manageGroups, generateInvite, getGroupName, isMember, isIn, getUser };
+export { generateInvite, getGroupName, isMember, isIn, getUser };
