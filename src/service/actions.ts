@@ -1,33 +1,10 @@
 import axios from "axios";
 import dayjs from "dayjs";
-import { Markup } from "telegraf";
 import Bot from "../Bot";
 import config from "../config";
 import logger from "../utils/logger";
 import { createPollText } from "../utils/utils";
-import { leaveCommunity } from "./common";
 import pollStorage from "./pollStorage";
-
-const confirmLeaveCommunityAction = async (ctx: any): Promise<void> => {
-  const data = ctx.match[0];
-  const commId = data.split("_")[2];
-  const commName = data.split(`leave_confirm_${commId}_`)[1];
-
-  ctx.replyWithMarkdown(
-    `You'll be kicked from every *${commName}* group. Are you sure?`,
-    Markup.inlineKeyboard([
-      Markup.button.callback("Yes", `leave_confirmed_${commId}`),
-      Markup.button.callback("No", "no")
-    ])
-  );
-};
-
-const confirmedLeaveCommunityAction = async (ctx: any): Promise<void> => {
-  leaveCommunity(
-    ctx.update.callback_query.from.id,
-    ctx.match[0].split("leave_confirmed_")[1]
-  );
-};
 
 const chooseRequirementAction = async (ctx: any): Promise<void> => {
   try {
@@ -143,10 +120,4 @@ const voteAction = async (ctx: any): Promise<void> => {
   }
 };
 
-export {
-  confirmLeaveCommunityAction,
-  confirmedLeaveCommunityAction,
-  chooseRequirementAction,
-  pollDescriptionAction,
-  voteAction
-};
+export { chooseRequirementAction, pollDescriptionAction, voteAction };

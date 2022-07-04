@@ -29,8 +29,6 @@ export default class Bot {
     bot.help(TGCommands.helpCommand);
 
     // other commands
-    bot.command("leave", TGCommands.leaveCommand);
-    bot.command("list", TGCommands.listCommunitiesCommand);
     bot.command("ping", TGCommands.pingCommand);
     bot.command("status", TGCommands.statusUpdateCommand);
     bot.command("groupid", TGCommands.groupIdCommand);
@@ -49,14 +47,6 @@ export default class Bot {
     bot.on("my_chat_member", TGEvents.myChatMemberUpdate);
 
     // action listeners
-    bot.action(
-      /^leave_confirm_[0-9]+_[a-zA-Z0-9 ,.:"'`]+$/,
-      TGActions.confirmLeaveCommunityAction
-    );
-    bot.action(
-      /^leave_confirmed_[0-9]+$/,
-      TGActions.confirmedLeaveCommunityAction
-    );
     bot.action(/;ChooseRequirement$/, TGActions.chooseRequirementAction);
     bot.action(/^desc;/, TGActions.pollDescriptionAction);
     bot.action(/;Vote$/, TGActions.voteAction);

@@ -1,11 +1,10 @@
-import axios, { AxiosResponse } from "axios";
-import { Markup } from "telegraf";
-import { InlineKeyboardButton } from "telegraf/types";
+import axios from "axios";
 import dayjs from "dayjs";
+import { Markup } from "telegraf";
 import Bot from "../Bot";
-import { generateInvite } from "../api/actions";
-import { fetchCommunitiesOfUser, getGroupName } from "./common";
 import config from "../config";
+import { generateInvite } from "../api/actions";
+import { getGroupName } from "./common";
 import logger from "../utils/logger";
 import {
   sendPollTokenChooser,
@@ -55,83 +54,35 @@ const startCommand = async (ctx: Ctx): Promise<void> => {
   const { message } = ctx;
 
   if (message.chat.id > 0) {
-    const refIdRegex = /^\/start [a-z0-9]{64}$/;
+    const groupIdRegex = /\/start ([0-9]*)/;
+    const found = message.text.match(groupIdRegex);
 
-    if (refIdRegex.test(message.text)) {
-      const refId = message.text.split("/start ")[1];
+    if (found) {
+      const platformGuildId = found[1];
       const platformUserId = message.from.id;
 
+      logger.verbose({
+        message: "startCommand",
+        meta: { platformGuildId, platformUserId }
+      });
+
       try {
-        await ctx.reply(
-          "Thank you for joining, I'll send the invites as soon as possible."
-        );
+        const access = (
+          await axios.get(
+            `${config.backendUrl}/platform/guild/access/${config.platform}/${platformGuildId}/${platformUserId}`
+          )
+        ).data;
 
-        let res: AxiosResponse;
+        if (access) {
+          const groupName = await getGroupName(+platformGuildId);
+          const link = await generateInvite(platformGuildId, platformUserId);
 
-        logger.verbose({
-          message: "startCommand",
-          meta: { platformUserId, refId }
-        });
-
-        try {
-          res = await axios.post(
-            `${config.backendUrl}/telegram/accessibleGroups`,
-            {
-              refId,
-              platformUserId
-            }
-          );
-        } catch (error) {
-          if (error?.response?.data?.errors?.[0]?.msg === "deleted") {
-            ctx.reply(
-              "This invite link has expired. Please, start the joining process through the guild page again."
-            );
-            return;
-          }
-
-          logger.error(`${JSON.stringify(error)}`);
-
-          ctx.reply(`Something went wrong. (${new Date().toUTCString()})`);
-
-          return;
-        }
-
-        if (res.data.length === 0) {
-          ctx.reply(
-            "There aren't any groups of this guild that you have access to."
-          );
-
-          return;
-        }
-
-        const invites: { link: string; name: string }[] = [];
-
-        await Promise.all(
-          res.data.map(async (groupId: string) => {
-            const inviteLink = await generateInvite(groupId, platformUserId);
-
-            if (inviteLink !== undefined) {
-              invites.push({
-                link: inviteLink,
-                name: await getGroupName(+groupId)
-              });
-            }
-          })
-        );
-
-        logger.verbose({ message: "invites", meta: { invites } });
-
-        if (invites.length) {
           ctx.replyWithMarkdown(
-            "Use the following invite links to join the groups you unlocked:",
-            Markup.inlineKeyboard(
-              invites.map((inv) => [Markup.button.url(inv.name, inv.link)])
-            )
+            `Here is your invite for the group "${groupName}"`,
+            Markup.inlineKeyboard([[Markup.button.url(groupName, link)]])
           );
         } else {
-          ctx.reply(
-            "You are already a member of the groups of this guild so you will not receive any invite links."
-          );
+          ctx.reply("I'm sorry but you don't have access for this guild.");
         }
       } catch (err) {
         logger.error(err);
@@ -139,51 +90,6 @@ const startCommand = async (ctx: Ctx): Promise<void> => {
     } else {
       helpCommand(ctx);
     }
-  }
-};
-
-const leaveCommand = async (ctx: Ctx): Promise<void> => {
-  try {
-    const platformUserId = ctx.message.from.id;
-
-    const res = await axios.get(
-      `${config.backendUrl}/user/getUserCommunitiesByTelegramId/${platformUserId}`
-    );
-
-    if (ctx.message.chat.id > 0 && res.data.length > 0) {
-      const communityList: InlineKeyboardButton[][] = res.data.map(
-        (comm: { id: string; name: string }) => [
-          Markup.button.callback(
-            comm.name,
-            `leave_confirm_${comm.id}_${comm.name}`
-          )
-        ]
-      );
-
-      await ctx.replyWithMarkdown(
-        "Choose the community you want to leave from the list below:",
-        Markup.inlineKeyboard(communityList)
-      );
-    } else {
-      await ctx.reply("You are not a member of any community.");
-    }
-  } catch (err) {
-    logger.error(err);
-  }
-};
-
-const listCommunitiesCommand = async (ctx: Ctx): Promise<void> => {
-  try {
-    const results = await fetchCommunitiesOfUser(ctx.message.from.id);
-
-    await ctx.replyWithMarkdown(
-      "Please visit your communities' websites:",
-      Markup.inlineKeyboard(
-        results.map((res) => [Markup.button.url(res.name, res.url)])
-      )
-    );
-  } catch (err) {
-    logger.error(err);
   }
 };
 
@@ -402,8 +308,6 @@ const cancelCommand = async (ctx: Ctx): Promise<void> => {
 export {
   helpCommand,
   startCommand,
-  leaveCommand,
-  listCommunitiesCommand,
   pingCommand,
   statusUpdateCommand,
   groupIdCommand,

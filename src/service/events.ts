@@ -190,16 +190,14 @@ const channelPostUpdate = async (
 
 const onUserJoined = async (
   platformUserId: number,
-  groupId: number
+  platformGuildId: number
 ): Promise<void> => {
   try {
-    const res = await axios.post(`${config.backendUrl}/user/joinedPlatform`, {
-      platform: config.platform,
+    await axios.post(`${config.backendUrl}/user/joinedPlatform`, {
+      platformName: config.platform,
       platformUserId,
-      groupId
+      platformGuildId
     });
-
-    logger.debug(JSON.stringify(res.data));
   } catch (err) {
     logger.error(err);
   }
