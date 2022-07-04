@@ -12,8 +12,7 @@ const getGroupName = async (groupId: number): Promise<string> => {
   return group.title;
 };
 
-const getGenericInvite = async (groupId: number): Promise<string> =>
-  `https://t.me/${Bot.info.username}?start=${groupId}`;
+const getGenericInvite = async (groupId: number): Promise<string> => `https://t.me/${Bot.info.username}?start=${groupId}`;
 
 const fetchCommunitiesOfUser = async (
   platformUserId: number
@@ -43,7 +42,7 @@ const leaveCommunity = async (
 
   try {
     const res = await axios.post(
-      `${config.backendUrl} /user/removeFromPlatform`,
+      `${config.backendUrl}/user/removeFromPlatform`,
       {
         platformUserId,
         platform: config.platform,
