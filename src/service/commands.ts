@@ -63,6 +63,7 @@ const startCommand = async (ctx: Ctx): Promise<void> => {
 
   if (!found) {
     helpCommand(ctx);
+    return;
   }
 
   const platformGuildId = found[1];
