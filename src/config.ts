@@ -2,14 +2,14 @@
 /* eslint no-underscore-dangle: ["error", { "allowAfterThis": true }] */
 
 import * as dotenv from "dotenv";
+import logger from "./utils/logger";
 
 const envFound = dotenv.config();
 
-/*
 if (envFound.error) {
-  throw new Error("Couldn't find .env file or volumes in compose.");
+  logger.error("Couldn't find .env file or volumes in compose.");
+  process.exit(1);
 }
-*/
 
 const telegramToken = process.env.BOT_TOKEN;
 const backendUrl = process.env.BACKEND_URL;
