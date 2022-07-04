@@ -12,7 +12,8 @@ const getGroupName = async (groupId: number): Promise<string> => {
   return group.title;
 };
 
-const getGenericInvite = async (groupId: number): Promise<string> => `https://t.me/${Bot.info.username}?start=${groupId}`;
+const getGenericInvite = async (groupId: number): Promise<string> =>
+  `https://t.me/${Bot.info.username}?start=${groupId}`;
 
 const fetchCommunitiesOfUser = async (
   platformUserId: number
@@ -29,32 +30,6 @@ const fetchCommunitiesOfUser = async (
   return (res.data as CommunityResult[]).filter(
     (community) => community.telegramIsMember
   );
-};
-
-const leaveCommunity = async (
-  platformUserId: number,
-  communityId: string
-): Promise<void> => {
-  logger.verbose({
-    message: "leaveCommunity",
-    meta: { platformUserId, communityId }
-  });
-
-  try {
-    const res = await axios.post(
-      `${config.backendUrl}/user/removeFromPlatform`,
-      {
-        platformUserId,
-        platform: config.platform,
-        communityId,
-        triggerKick: true
-      }
-    );
-
-    logger.debug(JSON.stringify(res.data));
-  } catch (err) {
-    logger.error(err);
-  }
 };
 
 const kickUser = async (
@@ -139,7 +114,6 @@ export {
   getGroupName,
   getGenericInvite,
   fetchCommunitiesOfUser,
-  leaveCommunity,
   kickUser,
   sendNotASuperGroup,
   sendMessageForSupergroup,

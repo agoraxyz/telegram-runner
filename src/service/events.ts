@@ -7,8 +7,6 @@ import {
   sendMessageForSupergroup,
   sendNotASuperGroup,
   sendNotAnAdministrator,
-  fetchCommunitiesOfUser,
-  leaveCommunity,
   kickUser
 } from "./common";
 import config from "../config";
@@ -278,24 +276,6 @@ const chatMemberUpdate = async (
   }
 };
 
-const onBlocked = async (
-  ctx: NarrowedContext<Context, Update.MyChatMemberUpdate>
-): Promise<void> => {
-  const platformUserId = ctx.update.my_chat_member.from.id;
-
-  logger.warn(`User "${platformUserId}" has blocked the bot.`);
-
-  try {
-    const communities = await fetchCommunitiesOfUser(platformUserId);
-
-    communities.map(async (community) =>
-      leaveCommunity(platformUserId, community.id)
-    );
-  } catch (err) {
-    logger.error(err);
-  }
-};
-
 const myChatMemberUpdate = async (
   ctx: NarrowedContext<Context, Update.MyChatMemberUpdate>
 ): Promise<void> => {
@@ -304,7 +284,8 @@ const myChatMemberUpdate = async (
 
   try {
     if (old_chat_member?.status === "kicked") {
-      onBlocked(ctx);
+      // onBlocked(ctx);
+      logger.warn(`User ${chat.id} has blocked the bot.`);
     } else if (
       new_chat_member?.status === "member" ||
       new_chat_member?.status === "administrator"
@@ -333,6 +314,5 @@ export {
   leftChatMemberUpdate,
   onUserRemoved,
   chatMemberUpdate,
-  myChatMemberUpdate,
-  onBlocked
+  myChatMemberUpdate
 };
