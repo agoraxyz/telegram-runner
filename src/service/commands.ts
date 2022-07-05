@@ -1,11 +1,8 @@
 import axios from "axios";
 import dayjs from "dayjs";
 import { Markup } from "telegraf";
-import { GuildPlatformData } from "@guildxyz/sdk";
 import Bot from "../Bot";
 import config from "../config";
-import { generateInvite } from "../api/actions";
-import { getGroupName } from "./common";
 import logger from "../utils/logger";
 import {
   sendPollTokenChooser,
@@ -52,91 +49,9 @@ const helpCommand = (ctx: Ctx): void => {
 };
 
 const startCommand = async (ctx: Ctx): Promise<void> => {
-  const { message } = ctx;
-
-  if (message.chat.id <= 0) {
-    return;
-  }
-
-  const groupIdRegex = /\/start (-[0-9]*)/;
-  const found = message.text.match(groupIdRegex);
-
-  if (!found) {
-    helpCommand(ctx);
-
-    return;
-  }
-
-  const platformGuildId = found[1];
-  const platformUserId = message.from.id;
-
-  logger.verbose({
-    message: "startCommand",
-    meta: { platformGuildId, platformUserId }
-  });
-
-  let access: GuildPlatformData;
-
-  try {
-    access = await Main.platform.guild.getUserAccess(
-      platformGuildId,
-      platformUserId.toString()
-    );
-  } catch (error) {
-    if (
-      error?.response?.data?.errors?.[0].msg.startsWith("Cannot find guild")
-    ) {
-      ctx.reply("No guild is associated with this group.");
-    } else if (
-      error?.response?.data?.errors?.[0].msg.startsWith("Cannot find user")
-    ) {
-      const joinResponse = await Main.platform.user.join(
-        platformGuildId,
-        platformUserId.toString()
-      );
-
-      ctx.reply(
-        `You are not a Guild member yet. Join guild here:${joinResponse.inviteLink}`
-      );
-    } else {
-      logger.error(error);
-      ctx.reply(`Unkown error occured.`);
-    }
-
-    return;
-  }
-
-  if (!access || access.roles?.length === 0) {
-    ctx.reply("I'm sorry but you don't have access for this guild.");
-
-    return;
-  }
-
-  try {
-    const groupName = await getGroupName(+platformGuildId);
-
-    if (!groupName) {
-      logger.error(`Cannot get groupName ${platformGuildId}`);
-      throw new Error("Cannot get groupName.");
-    }
-
-    const link = await generateInvite(platformGuildId, platformUserId);
-
-    if (!link) {
-      logger.error(
-        `Cannot generate invite ${platformGuildId} ${platformUserId}`
-      );
-      throw new Error("Cannot generate invite.");
-    }
-
-    ctx.replyWithMarkdown(
-      `Here is your invite for the group "${groupName}"`,
-      Markup.inlineKeyboard([Markup.button.url(groupName, link)])
-    );
-  } catch (err) {
-    logger.error(err);
-    ctx.reply(`An error occured. (${err.message})`);
-  }
+  ctx.replyWithMarkdown(
+    "Visit the [Guild website](https://guild.xyz) to join guilds"
+  );
 };
 
 const pingCommand = async (ctx: Ctx): Promise<void> => {

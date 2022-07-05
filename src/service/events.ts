@@ -231,6 +231,44 @@ const leftChatMemberUpdate = async (
   }
 };
 
+/*
+  let access: GuildPlatformData;
+
+  try {
+    access = await Main.platform.guild.getUserAccess(
+      platformGuildId,
+      platformUserId.toString()
+    );
+  } catch (error) {
+    if (
+      error?.response?.data?.errors?.[0].msg.startsWith("Cannot find guild")
+    ) {
+      ctx.reply("No guild is associated with this group.");
+    } else if (
+      error?.response?.data?.errors?.[0].msg.startsWith("Cannot find user")
+    ) {
+      const joinResponse = await Main.platform.user.join(
+        platformGuildId,
+        platformUserId.toString()
+      );
+
+      ctx.reply(
+        `You are not a Guild member yet. Join guild here:${joinResponse.inviteLink}`
+      );
+    } else {
+      logger.error(error);
+      ctx.reply(`Unkown error occured.`);
+    }
+
+    return;
+  }
+
+  if (!access || access.roles?.length === 0) {
+    ctx.reply("I'm sorry but you don't have access for this guild.");
+
+    return;
+  } */
+
 const chatMemberUpdate = async (
   ctx: NarrowedContext<Context, Update.ChatMemberUpdate>
 ) => {
