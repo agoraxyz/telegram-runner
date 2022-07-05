@@ -1,6 +1,4 @@
-import axios from "axios";
 import { isMember } from "../api/actions";
-import { CommunityResult } from "../api/types";
 import Bot from "../Bot";
 import config from "../config";
 import logger from "../utils/logger";
@@ -14,23 +12,6 @@ const getGroupName = async (groupId: number): Promise<string> => {
 
 const getGenericInvite = async (groupId: number): Promise<string> =>
   `https://t.me/${Bot.info.username}?start=${groupId}`;
-
-const fetchCommunitiesOfUser = async (
-  platformUserId: number
-): Promise<CommunityResult[]> => {
-  logger.verbose({
-    message: "fetchCommunitiesOfUser",
-    meta: { platformUserId }
-  });
-
-  const res = await axios.get(
-    `${config.backendUrl} /communities/${platformUserId} `
-  );
-
-  return (res.data as CommunityResult[]).filter(
-    (community) => community.telegramIsMember
-  );
-};
 
 const kickUser = async (
   groupId: number,
@@ -113,7 +94,6 @@ const sendNotAnAdministrator = async (groupId: number) => {
 export {
   getGroupName,
   getGenericInvite,
-  fetchCommunitiesOfUser,
   kickUser,
   sendNotASuperGroup,
   sendMessageForSupergroup,

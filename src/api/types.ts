@@ -4,14 +4,6 @@ type IsMemberParam = {
   groupIds:       string[];
 };
 
-// prettier-ignore
-type CommunityResult = {
-  id              : string;
-  name            : string;
-  url             : string;
-  telegramIsMember: boolean;
-};
-
 type LevelInfo = {
   name: string;
   levels: string[];
@@ -90,7 +82,6 @@ type OauthData = {
 
 export {
   IsMemberParam,
-  CommunityResult,
   LevelInfo,
   ErrorResult,
   IsInResult,
