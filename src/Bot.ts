@@ -45,6 +45,7 @@ export default class Bot {
     bot.on("left_chat_member", TGEvents.leftChatMemberUpdate);
     bot.on("chat_member", TGEvents.chatMemberUpdate);
     bot.on("my_chat_member", TGEvents.myChatMemberUpdate);
+    bot.on("chat_join_request", TGEvents.joinRequestUpdate);
 
     // action listeners
     bot.action(/;ChooseRequirement$/, TGActions.chooseRequirementAction);
@@ -60,7 +61,8 @@ export default class Bot {
           "message",
           "channel_post",
           "chosen_inline_result",
-          "callback_query"
+          "callback_query",
+          "chat_join_request"
         ]
       })
       .then(() => {

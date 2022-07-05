@@ -2,6 +2,7 @@ import axios from "axios";
 import { Context, NarrowedContext } from "telegraf";
 import { Update } from "telegraf/types";
 import dayjs from "dayjs";
+import { GuildPlatformData } from "@guildxyz/sdk";
 import Bot from "../Bot";
 import {
   sendMessageForSupergroup,
@@ -14,6 +15,7 @@ import logger from "../utils/logger";
 import { createPollText, initPoll } from "../utils/utils";
 import pollStorage from "./pollStorage";
 import { Poll } from "./types";
+import Main from "../Main";
 
 const messageUpdate = async (
   ctx: NarrowedContext<Context, Update.MessageUpdate>
@@ -231,44 +233,6 @@ const leftChatMemberUpdate = async (
   }
 };
 
-/*
-  let access: GuildPlatformData;
-
-  try {
-    access = await Main.platform.guild.getUserAccess(
-      platformGuildId,
-      platformUserId.toString()
-    );
-  } catch (error) {
-    if (
-      error?.response?.data?.errors?.[0].msg.startsWith("Cannot find guild")
-    ) {
-      ctx.reply("No guild is associated with this group.");
-    } else if (
-      error?.response?.data?.errors?.[0].msg.startsWith("Cannot find user")
-    ) {
-      const joinResponse = await Main.platform.user.join(
-        platformGuildId,
-        platformUserId.toString()
-      );
-
-      ctx.reply(
-        `You are not a Guild member yet. Join guild here:${joinResponse.inviteLink}`
-      );
-    } else {
-      logger.error(error);
-      ctx.reply(`Unkown error occured.`);
-    }
-
-    return;
-  }
-
-  if (!access || access.roles?.length === 0) {
-    ctx.reply("I'm sorry but you don't have access for this guild.");
-
-    return;
-  } */
-
 const chatMemberUpdate = async (
   ctx: NarrowedContext<Context, Update.ChatMemberUpdate>
 ) => {
@@ -345,6 +309,48 @@ const myChatMemberUpdate = async (
   }
 };
 
+const joinRequestUpdate = async (
+  ctx: NarrowedContext<Context, Update.ChatJoinRequestUpdate>
+): Promise<void> => {
+  const { chatJoinRequest } = ctx;
+  const platformGuildId = chatJoinRequest.chat.id;
+  const platformUserId = chatJoinRequest.from.id;
+
+  let access: GuildPlatformData;
+
+  try {
+    access = await Main.platform.guild.getUserAccess(
+      platformGuildId.toString(),
+      platformUserId.toString()
+    );
+  } catch (error) {
+    if (
+      error?.response?.data?.errors?.[0].msg.startsWith("Cannot find guild")
+    ) {
+      logger.error("No guild is associated with this group.");
+    } else if (
+      error?.response?.data?.errors?.[0].msg.startsWith("Cannot find user")
+    ) {
+      await Main.platform.user.join(
+        platformGuildId.toString(),
+        platformUserId.toString()
+      );
+    } else {
+      logger.error(error);
+    }
+
+    return;
+  }
+
+  if (!access || access.roles?.length === 0) {
+    await ctx.declineChatJoinRequest(ctx.chatJoinRequest.from.id);
+
+    return;
+  }
+
+  await ctx.approveChatJoinRequest(ctx.chatJoinRequest.from.id);
+};
+
 export {
   messageUpdate,
   channelPostUpdate,
@@ -352,5 +358,6 @@ export {
   leftChatMemberUpdate,
   onUserRemoved,
   chatMemberUpdate,
-  myChatMemberUpdate
+  myChatMemberUpdate,
+  joinRequestUpdate
 };
