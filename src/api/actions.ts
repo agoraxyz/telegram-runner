@@ -24,20 +24,6 @@ const isMember = async (
   }
 };
 
-const generateInvite = async (groupId: string): Promise<string | undefined> => {
-  try {
-    return (
-      ((await Bot.client.getChat(groupId)) as any).invite_link ||
-      (await Bot.client.createChatInviteLink(groupId, {
-        creates_join_request: true
-      }))
-    ).invite_link;
-  } catch (err) {
-    logger.error(err);
-    return undefined;
-  }
-};
-
 const isIn = async (groupId: number): Promise<IsInResult> => {
   try {
     const chat = await Bot.client.getChat(groupId);
@@ -132,4 +118,4 @@ const getUser = async (platformUserId: number) => {
   };
 };
 
-export { generateInvite, getGroupName, isMember, isIn, getUser };
+export { getGroupName, isMember, isIn, getUser };

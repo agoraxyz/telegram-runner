@@ -11,8 +11,21 @@ const getGroupName = async (groupId: number): Promise<string> => {
   return group.title;
 };
 
-const getGenericInvite = async (groupId: number): Promise<string> =>
-  `https://t.me/${Bot.info.username}?start=${groupId}`;
+const generateInvite = async (groupId: string): Promise<string | undefined> => {
+  try {
+    return (
+      ((await Bot.client.getChat(groupId)) as any).invite_link ||
+      (
+        await Bot.client.createChatInviteLink(groupId, {
+          creates_join_request: true
+        })
+      ).invite_link
+    );
+  } catch (err) {
+    logger.error(err);
+    return undefined;
+  }
+};
 
 const kickUser = async (
   groupId: number,
@@ -94,7 +107,7 @@ const sendNotAnAdministrator = async (groupId: number) => {
 
 export {
   getGroupName,
-  getGenericInvite,
+  generateInvite,
   kickUser,
   sendNotASuperGroup,
   sendMessageForSupergroup,

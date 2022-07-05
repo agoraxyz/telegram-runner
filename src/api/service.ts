@@ -1,6 +1,6 @@
 import { createHash, createHmac } from "crypto";
 import config from "../config";
-import { getGenericInvite, kickUser } from "../service/common";
+import { generateInvite, kickUser } from "../service/common";
 import { SuccessResult } from "../service/types";
 import logger from "../utils/logger";
 import { getGroupName, isMember } from "./actions";
@@ -77,7 +77,7 @@ const service = {
     logger.verbose({ message: "info params", meta: { platformGuildId } });
 
     const name = await getGroupName(+platformGuildId);
-    const invite = await getGenericInvite(+platformGuildId);
+    const invite = await generateInvite(platformGuildId);
     const result = { name, invite };
 
     logger.verbose({ message: "info result", meta: result });
