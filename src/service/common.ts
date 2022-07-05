@@ -1,3 +1,4 @@
+import dayjs from "dayjs";
 import { isMember } from "../api/actions";
 import Bot from "../Bot";
 import config from "../config";
@@ -24,7 +25,7 @@ const kickUser = async (
   });
 
   try {
-    await Bot.client.banChatMember(groupId, +userId);
+    await Bot.client.banChatMember(groupId, +userId, dayjs().unix() + 30);
 
     const groupName = await getGroupName(groupId);
 
