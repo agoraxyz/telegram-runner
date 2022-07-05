@@ -24,20 +24,14 @@ const isMember = async (
   }
 };
 
-const generateInvite = async (
-  groupId: string,
-  platformUserId: number
-): Promise<string | undefined> => {
+const generateInvite = async (groupId: string): Promise<string | undefined> => {
   try {
-    if (!isMember(groupId, platformUserId)) {
-      await Bot.client.unbanChatMember(groupId, platformUserId);
-    }
-
     return (
-      ((await Bot.client.getChat(groupId)) as { invite_link: string })
-        .invite_link ||
-      (await Bot.client.createChatInviteLink(groupId)).invite_link
-    );
+      ((await Bot.client.getChat(groupId)) as any).invite_link ||
+      (await Bot.client.createChatInviteLink(groupId, {
+        creates_join_request: true
+      }))
+    ).invite_link;
   } catch (err) {
     logger.error(err);
     return undefined;
