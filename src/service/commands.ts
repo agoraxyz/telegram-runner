@@ -63,6 +63,7 @@ const startCommand = async (ctx: Ctx): Promise<void> => {
 
   if (!found) {
     helpCommand(ctx);
+
     return;
   }
 
@@ -75,6 +76,7 @@ const startCommand = async (ctx: Ctx): Promise<void> => {
   });
 
   let access: GuildPlatformData;
+
   try {
     access = await Main.platform.guild.getUserAccess(
       platformGuildId,
@@ -92,6 +94,7 @@ const startCommand = async (ctx: Ctx): Promise<void> => {
         platformGuildId,
         platformUserId.toString()
       );
+
       ctx.reply(
         `You are not a Guild member yet. Join guild here:${joinResponse.inviteLink}`
       );
@@ -99,11 +102,13 @@ const startCommand = async (ctx: Ctx): Promise<void> => {
       logger.error(error);
       ctx.reply(`Unkown error occured.`);
     }
+
     return;
   }
 
   if (!access || access.roles?.length === 0) {
     ctx.reply("I'm sorry but you don't have access for this guild.");
+
     return;
   }
 
@@ -116,6 +121,7 @@ const startCommand = async (ctx: Ctx): Promise<void> => {
     }
 
     const link = await generateInvite(platformGuildId, platformUserId);
+
     if (!link) {
       logger.error(
         `Cannot generate invite ${platformGuildId} ${platformUserId}`

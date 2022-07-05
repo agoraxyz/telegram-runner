@@ -29,19 +29,15 @@ const generateInvite = async (
   platformUserId: number
 ): Promise<string | undefined> => {
   try {
-    try {
-      await Bot.client.unbanChatMember(groupId, +platformUserId);
-    } catch (error) {
-      if (error.message !== "400: Bad Request: can't remove chat owner") {
-        throw error;
-      }
+    if (!isMember(groupId, platformUserId)) {
+      await Bot.client.unbanChatMember(groupId, platformUserId);
     }
 
-    const { invite_link } = await Bot.client.createChatInviteLink(groupId, {
-      member_limit: 1
-    });
-
-    return invite_link;
+    return (
+      ((await Bot.client.getChat(groupId)) as { invite_link: string })
+        .invite_link ||
+      (await Bot.client.createChatInviteLink(groupId)).invite_link
+    );
   } catch (err) {
     logger.error(err);
     return undefined;

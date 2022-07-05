@@ -216,8 +216,8 @@ const onUserRemoved = async (
     );
 
     logger.debug(JSON.stringify(res.data));
-  } catch (_) {
-    logger.error("Failed to remove user from Guild.");
+  } catch (err) {
+    logger.error(err.message);
   }
 };
 
