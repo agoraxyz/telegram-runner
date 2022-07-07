@@ -1,4 +1,4 @@
-import { Platform, setApiBaseUrl } from "@guildxyz/sdk";
+import { Platform, setApiBaseUrl, setProjectName } from "@guildxyz/sdk";
 import api from "./api/api";
 import Bot from "./Bot";
 import config from "./config";
@@ -10,6 +10,7 @@ export default class Main {
   public static async start(): Promise<void> {
     // setup sdk
     setApiBaseUrl(config.backendUrl);
+    setProjectName("TELEGRAM connector");
     logger.info(`Backend url set to ${config.backendUrl}`);
     this.platform = new Platform(config.platform);
 
