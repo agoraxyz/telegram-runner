@@ -120,7 +120,7 @@ const addCommand = async (ctx: Ctx): Promise<void> => {
     Markup.inlineKeyboard([
       Markup.button.url(
         "Add Guild bot",
-        "https://t.me/Guildxyz_bot?startgroup=true"
+        `https://t.me/${Bot.info.username}?startgroup=true`
       )
     ])
   );
