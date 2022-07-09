@@ -1,22 +1,17 @@
-<h1 align="center">Medousa</h1>
-
 <p align="center">
-	<img src="docs/img/medousa.png" width="70%" />
+	<img src="docs/img/guild_bot.png" width="200px" />
 </p>
 
-## Description
+Guild bot is part of the [Guild project](https://docs.guild.xyz/guild).
+The purpose of this bot is to provide security for guilds by managing users.
 
-Medousa is part of the [Agora project](https://github.com/agoraxyz/). She
-is a ruthless greek goddess who works as a Telegram bot and does all the dirty
-work from removing intruders to providing extra privileges to premium users.
-
-- [Website](https://agora.xyz)
+- [Website](https://guild.xyz)
 - [Changelog](./CHANGELOG.md)
 - [License](./LICENSE)
 
 ## Getting started
 
-Install dependencies (Telegraf):
+Install dependencies:
 
 ```bash
 npm install
@@ -24,26 +19,27 @@ npm install
 yarn install
 ```
 
-Create a new file called .env and add the following environment variables:
+Create a new file called _.env_ and add the following environment variables:
 
 ```bash
-BOT_TOKEN=123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
 BACKEND_URL=https://api.agora.space
+BOT_TOKEN=123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
+BOT_USERNAME=example_username_bot
 REDIS_HOST=redis://@redis:6379
-HMAC_ALGORITHM=
-HMAC_SECRET=
+ADMIN_VIDEO_URL=https://example.com/test.mp4
+GROUPID_IMAGE=https://example.com/test.png
 ```
 
-Create another file called redis.env:
+Create another file called _redis.env_:
 
-```
+```bash
 ALLOW_EMPTY_PASSWORD=no
 REDIS_DISABLE_COMMANDS=FLUSHDB,FLUSHALL
 REDIS_PASSWORD=
 REDIS_PORT_NUMBER=6381
 ```
 
-Run the bot:
+Running the bot:
 
 ```bash
 # for development:
@@ -55,6 +51,9 @@ yarn dev
 npm run build && npm run prod
 # or
 yarn build && yarn prod
+
+# inside a Docker container
+docker-compose up --build
 ```
 
 ## Documentation
