@@ -11,7 +11,7 @@ The purpose of this bot is to provide security for guilds by managing users.
 
 ## Getting started
 
-Install dependencies:
+Install the dependencies:
 
 ```bash
 npm install
@@ -23,6 +23,7 @@ Create a new file called _.env_ and add the following environment variables:
 
 ```bash
 BACKEND_URL=https://api.agora.space
+PORT=8991
 BOT_TOKEN=123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
 BOT_USERNAME=example_username_bot
 REDIS_HOST=redis://@redis:6379
@@ -39,7 +40,7 @@ REDIS_PASSWORD=
 REDIS_PORT_NUMBER=6381
 ```
 
-Running the bot:
+Run the bot:
 
 ```bash
 # for development:
