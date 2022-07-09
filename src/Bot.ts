@@ -33,11 +33,14 @@ export default class Bot {
     bot.command("status", TGCommands.statusUpdateCommand);
     bot.command("groupid", TGCommands.groupIdCommand);
     bot.command("add", TGCommands.addCommand);
+    // TODO
+    /*
     bot.command("poll", TGCommands.pollCommand);
     bot.command("enough", TGCommands.enoughCommand);
     bot.command("done", TGCommands.doneCommand);
     bot.command("reset", TGCommands.resetCommand);
     bot.command("cancel", TGCommands.cancelCommand);
+    */
 
     // event listeners
     bot.on("text", TGEvents.messageUpdate);
