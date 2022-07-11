@@ -18,7 +18,7 @@
     "lint-fix": "eslint --fix . --ext .ts,.tsx,.js,.jsx"
   },
   "dependencies": {
-    "@guildxyz/sdk": "github:agoraxyz/guild-sdk#I7-modular-backend",
+    "@guildxyz/sdk": "github:agoraxyz/guild-sdk#next",
     "axios": "^0.27.2",
     "crypto": "^1.0.1",
     "dayjs": "^1.11.3",
